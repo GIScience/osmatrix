@@ -75,14 +75,28 @@ MAP = (function() {
 	}
 
 	/**
-	 * [getLegend description]
+	 * [getLegend description] // NOT TESTED YET
 	 * @param  {[type]}   req  [description]
 	 * @param  {[type]}   res  [description]
 	 * @param  {Function} next [description]
 	 * @return {[type]}        [description]
 	 */
 	var getLegend = function (req, res, next) {
-		
+		var quantiles = ATTRIBUTES[req.params.layer].quantiles;
+	
+		var entries = [];
+		quantiles.forEach(function(quantil, i) {
+			entries.push({
+				'color': '#' + COLORS[i],
+				'label': ((i === 0) ? ('[value] &lt;=' + quantil) : (quantiles[i-1] + ' &lt; [value] &lt;= ' + quantil);
+			});
+		});
+
+		entries.push({'color': '#' + COLORS[quantiles.length], 'label': quantiles[quantiles.length - 1] + ' &lt; [value]'});
+		entries.push({'color': '#' + ELSE_COLOR, 'label': 'Other values'});
+
+		res.send('{"attributeName": "' + req.params.layer + '", "labels": ' + JSON.stringify(entries) + '}');
+		next();
 	}
 
 	map.prototype.getTile = getTile;
