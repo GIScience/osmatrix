@@ -370,8 +370,6 @@ OSMatrixMap = {
 		if (zoom > 12) {
 			renderLabel = '<TextSymbolizer face-name="DejaVu Sans Book" size="16" dy="-10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[cell_id]</TextSymbolizer>' + 
 				'<TextSymbolizer face-name="DejaVu Sans Book" size="16" dy="10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[label]</TextSymbolizer>';
-		}
-		if (zoom > 12) {
 			renderOutline = '<LineSymbolizer stroke="#000000" stroke-width="2"/>';
 		}
 		if (zoom > 11) {
