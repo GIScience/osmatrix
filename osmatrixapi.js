@@ -461,13 +461,13 @@ OSMatrixMap = {
 	},
 
 	getTile: function (req, res, next) {
-		var table = attributes[req.params.layer].table;
+		
 	
 		var mercator = require(path.join(__dirname, 'node_modules/mapnik/examples/utils/sphericalmercator.js'));
 		var parseXYZ = require(path.join(__dirname, 'node_modules/mapnik/examples/utils/tile.js')).parseXYZ;
-
 		var TMS_SCHEME = false;
 		
+		var table = attributes[req.params.layer].table;
 		var queryParams = querystring.parse(req.query);
 		var bbox = mercator.xyz_to_envelope(parseInt(queryParams.x), parseInt(queryParams.y), parseInt(queryParams.z), false);
 		

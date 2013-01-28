@@ -70,7 +70,6 @@ DATABASE = (function() {
 						else {
 							results[attributeName] = {'table' : table, 'quantiles': result.rows[0].quantile};
 							pending--;
-							console.log(pending);
 							if (pending === 0) {
 								connection.end();
 								callback(results);
@@ -82,7 +81,46 @@ DATABASE = (function() {
 		});
 	}
 
+	/**
+	 * [getMapnikDatasourceConfig description]
+	 * @return {[type]} [description]
+	 */
+	var getMapnikDatasourceConfig = function(table, bbox, timestamp, isDate) {
+		var valueRequest = table + ".value AS value, ";
+		var labelRequest = "CAST(round(CAST(" + table + ".value AS numeric), 3) AS text) AS label, "
+		if (isDate) {
+			valueRequest = "	to_char(to_timestamp(" + table + ".value / 1000), 'YYYY-MM-DD') AS value, ";
+			labelRequest = "	to_char(to_timestamp(" + table + ".value / 1000), 'YYYY-MM-DD') AS label, "
+		} 
+
+		var query = [
+			"(SELECT ",
+  			table + ".id, ", 
+			"	'#' || CAST(" + table + ".cell_id AS text) AS cell_id, ",
+  			valueRequest,
+  			labelRequest, 
+  			" 	geom ",
+  			"FROM " + table,
+			" LEFT JOIN cells ON (" + table + ".cell_id = cells.id) ",
+			"WHERE ",
+			"(ST_Intersects(geom, geomfromtext(\'POLYGON((" + bbox[0] + " " + bbox[1] + "," + bbox[0] + " " + bbox[3] + "," + bbox[2] + " " + bbox[3] + "," + bbox[2] + " " + bbox[1] + "," + bbox[0] + " " + bbox[1] + "))\', 900913))) AND ",
+			"(" + table + ".valid <= " + timestamp + " AND ((" + table + ".expired > " + timestamp + ") OR (" + table + ".expired IS NULL)))) as awesometable"
+		].join('');
+
+		return {
+			'host': config.host,
+			'dbname' : config.name,
+  			'user' : config.user,
+			'password': config.pass,
+  			'type' : 'postgis',
+ 			'geometry_field': 'geom',
+ 			'table': query,
+ 			'extent' : bbox.join(',')
+		};
+	}
+
 	database.prototype.getAttributeInfo = getAttributeInfo;
+	database.prototype.getMapnikDatasourceConfig = getMapnikDatasourceConfig;
 
 	/**
 	 * [createDbConnector description]

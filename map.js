@@ -1,4 +1,7 @@
 var DB = require('./database');
+var PATH = require('path');
+var QUERYSTRING = require('querystring');
+var MAPNIK = require('mapnik');
 
 MAP = (function() {
 	/**
@@ -18,6 +21,24 @@ MAP = (function() {
 	 * @type {Number}
 	 */
 	var OPACITY = 0.5;
+
+	/**
+	 * [MERCATOR description]
+	 * @type {[type]}
+	 */
+	var MERCATOR = require(PATH.resolve(__dirname, '../node_modules/mapnik/examples/utils/sphericalmercator.js'));
+
+	/**
+	 * [PARSE_XYZ description]
+	 * @type {[type]}
+	 */
+	var PARSE_XYZ = require(PATH.resolve(__dirname, '../node_modules/mapnik/examples/utils/tile.js')).parseXYZ;
+
+	/**
+	 * [TMS_SCHEME description]
+	 * @type {Boolean}
+	 */
+	var TMS_SCHEME = false;
 
 	/**
 	 * [ATTRIBUTES description]
@@ -40,6 +61,7 @@ MAP = (function() {
 	 */
 	var handleAttributeInfo = function(result) {
 		ATTRIBUTES = result;
+		console.log('Attribute information successfully loaded. Service ready.');
 	}
 
 	/* **********************************************************************************
@@ -71,7 +93,6 @@ MAP = (function() {
 	 */
 	var getFilter = function(lowerBound, upperBound) {
 		var filter = [];
-		'<Filter>[value] &gt; ' + quantiles[i-1] + ' and [value] &lt;= ' + quantiles[i] + ' </Filter>'
 
 		filter.push('<Filter>');
 
@@ -91,11 +112,12 @@ MAP = (function() {
 	 * @return {[type]}               [description]
 	 */
 	var getSymolizer = function(color, renderOutline, renderLabel) {
-		return [
-			'<PolygonSymbolizer gamma=".65" fill-opacity="' + OPACITY + '" fill="#' + color +'"/>',
-			renderOutline,
-			renderLabel
-		].join();
+		var symbolizer = ['<PolygonSymbolizer gamma=".65" fill-opacity="' + OPACITY + '" fill="#' + color +'"/>'];
+
+		if (renderOutline) symbolizer.push(renderOutline);
+		if (renderLabel) symbolizer.push(renderLabel);
+
+		return symbolizer;
 	}
 
 	/**
@@ -131,6 +153,8 @@ MAP = (function() {
 			style.push(getSymolizer(COLORS[i], renderOutline, renderLabel));
 
 			if (i === quantiles.length-1) {
+				style.push('</Rule>');
+				style.push('<Rule>');
 				style.push(getFilter(quantil, undefined));
 				style.push(getSymolizer(COLORS[i+1], renderOutline, renderLabel));				
 			}
@@ -138,13 +162,15 @@ MAP = (function() {
 			style.push('</Rule>');
 		});
 
-		style.push('<Rule><ElseFilter/><PolygonSymbolizer fill-opacity="0.7" fill="#' + ELSE_COLOR + '"/>' + renderOutline + renderLabel + '</Rule>');
+		style.push('<Rule><ElseFilter/>');
+		style.push(getSymolizer(ELSE_COLOR, renderOutline, renderLabel));
+		style.push('</Rule>');
 		style.push('</Style>');
 			
 		style.push('<Style name="cells"><Rule><LineSymbolizer stroke="#ccc" stroke-width="' + strokeWidth + '"/></Rule></Style>');
 		style.push('</Map>');
-
 		return style.join('');
+
 	}
 
 	/**
@@ -155,7 +181,43 @@ MAP = (function() {
 	 * @return {[type]}        [description]
 	 */
 	var getTile = function (req, res, next) {
-		
+		var table = ATTRIBUTES[req.params.layer].table,
+			queryParams = QUERYSTRING.parse(req.query),
+			bbox = MERCATOR.xyz_to_envelope(parseInt(queryParams.x), parseInt(queryParams.y), parseInt(queryParams.z), false);
+			map = new MAPNIK.Map(256, 256, MERCATOR.proj4);
+
+		PARSE_XYZ(req, TMS_SCHEME, function(error,params) {
+			if (!error) {
+				map.bufferSize = 64;
+        		map.fromStringSync(getStyleXML(req.params.layer, queryParams.z), {strict: true});
+
+        		if (queryParams.z > 8) {
+					var cellsLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
+   		     		cellsLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, queryParams.timestamp, req.params.layer.toLowerCase().indexOf('date') == 0));
+	        		cellsLayer.styles = ['cells'];
+	        		map.add_layer(cellsLayer);
+        		}
+
+        		var attributesLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
+        		attributesLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, queryParams.timestamp, req.params.layer.toLowerCase().indexOf('date') == 0));
+        		attributesLayer.styles = [req.params.layer];
+        		map.add_layer(attributesLayer);
+
+        		map.extent = bbox;
+            	var im = new MAPNIK.Image(map.width, map.height);
+			    map.render(im, function(err, im) {
+              		if (err) {
+                		throw err;
+              		} else {
+                		res.writeHead(200, {'Content-Type': 'image/png'});
+                		res.end(im.encodeSync('png'));
+              		}
+           		});
+			} else {
+				res.writeHead(500, {'Content-Type': 'text/plain'});
+				res.end(error.message);
+			}
+		});
 	}
 
 	/**
@@ -172,7 +234,7 @@ MAP = (function() {
 		quantiles.forEach(function(quantil, i) {
 			entries.push({
 				'color': '#' + COLORS[i],
-				'label': ((i === 0) ? ('[value] &lt;=' + quantil) : (quantiles[i-1] + ' &lt; [value] &lt;= ' + quantil);
+				'label': ((i === 0) ? ('[value] &lt;=' + quantil) : (quantiles[i-1] + ' &lt; [value] &lt;= ' + quantil))
 			});
 		});
 
