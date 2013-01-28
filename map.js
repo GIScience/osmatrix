@@ -1,4 +1,3 @@
-var DB = require('./database');
 var PATH = require('path');
 var QUERYSTRING = require('querystring');
 var MAPNIK = require('mapnik');
@@ -51,6 +50,15 @@ MAP = (function() {
 	 */
 	var DB_CONNECTOR;
 
+	/**
+	 * Constructor
+	 * @param  {Object} dbConfig Database configuration info including user name, password, host and table.
+	 */
+	var map = function (dbConnector) {
+		DB_CONNECTOR = new DB(dbConnector);
+		getAttributeInfo();
+	}
+
 	/* **********************************************************************************
 	 * EVENT HANDLER
 	 * *********************************************************************************/
@@ -67,15 +75,6 @@ MAP = (function() {
 	/* **********************************************************************************
 	 * CONTROL FUNCTIONS
 	 * *********************************************************************************/
-
-	/**
-	 * Constructor
-	 * @param  {Object} dbConfig Database configuration info including user name, password, host and table.
-	 */
-	var map = function (dbConfig) {
-		DB_CONNECTOR = new DB(dbConfig);
-		getAttributeInfo();
-	}
 
 	/**
 	 * Gets information on tables and quantil threshold from database.
@@ -213,6 +212,7 @@ MAP = (function() {
 				res.end(error.message);
 			}
 		});
+		return next();
 	}
 
 	/**
@@ -233,7 +233,7 @@ MAP = (function() {
 		entries.push({'color': '#' + ELSE_COLOR, 'label': 'Other values'});
 
 		res.send('{"attributeName": "' + req.params.layer + '", "labels": ' + JSON.stringify(entries) + '}');
-		next();
+		return next();
 	}
 
 	map.prototype.getTile = getTile;

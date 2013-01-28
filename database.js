@@ -119,8 +119,25 @@ DATABASE = (function() {
 		};
 	}
 
+	/**
+	 * [getAttributes description]
+	 * @param  {Function} callback [description]
+	 * @param  {[type]}   request  [description]
+	 */
+	var getAttributes = function(callback, request) {
+		var connection = connect();
+		connection.query(
+			'SELECT id, attribute AS name, description, title FROM attribute_types WHERE id NOT IN (19) ORDER BY title', 
+			function (error, result) {
+				connection.end();
+				if (error) callback({error: error}, request);
+				else callback(result, request);
+		});
+	}
+
 	database.prototype.getAttributeInfo = getAttributeInfo;
 	database.prototype.getMapnikDatasourceConfig = getMapnikDatasourceConfig;
+	database.prototype.getAttributes = getAttributes;
 
 	/**
 	 * [createDbConnector description]
