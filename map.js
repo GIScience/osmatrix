@@ -5,43 +5,43 @@ var MAPNIK = require('mapnik');
 
 MAP = (function() {
 	/**
-	 * [COLORS description]
+	 * Defines the color scheme of the map.
 	 * @type {Array}
 	 */
 	var COLORS = ["FFFFFF", "FFF7FB", "ECE7F2", "D0D1E6", "A6BDDB", "74A9CF", "3690C0", "0570B0", "045A8D", "023858"]
 
 	/**
-	 * [ELSE_COLOR description]
+	 * Defines the color of features not covered by the color scheme.
 	 * @type {String}
 	 */
 	var ELSE_COLOR = "ae3825"; 
 
 	/**
-	 * [OPACITY description]
+	 * The opacity of the OSMatrix layer.
 	 * @type {Number}
 	 */
 	var OPACITY = 0.5;
 
 	/**
-	 * [MERCATOR description]
-	 * @type {[type]}
+	 * Map projection object. Used to render map.
+	 * @type {Object}
 	 */
 	var MERCATOR = require(PATH.resolve(__dirname, '../node_modules/mapnik/examples/utils/sphericalmercator.js'));
 
 	/**
-	 * [PARSE_XYZ description]
-	 * @type {[type]}
+	 * Parses the XYZ scheme into bounding box.
+	 * @type {Function}
 	 */
 	var PARSE_XYZ = require(PATH.resolve(__dirname, '../node_modules/mapnik/examples/utils/tile.js')).parseXYZ;
 
 	/**
-	 * [TMS_SCHEME description]
+	 * Indicates if the request follows TMS scheme.
 	 * @type {Boolean}
 	 */
 	var TMS_SCHEME = false;
 
 	/**
-	 * [ATTRIBUTES description]
+	 * Contains table names and quantile thresholds for attributes.
 	 * @type {Object}
 	 */
 	var ATTRIBUTES;
@@ -56,8 +56,8 @@ MAP = (function() {
 	 * *********************************************************************************/
 
 	/**
-	 * [handleAttributeInfo description]
-	 * @param  {[type]} result [description]
+	 * Handles results of getAttribute Info
+	 * @param  {Object} result Attrbute information as returned from getAttributeInfo
 	 */
 	var handleAttributeInfo = function(result) {
 		ATTRIBUTES = result;
@@ -70,7 +70,7 @@ MAP = (function() {
 
 	/**
 	 * Constructor
-	 * @param  {[type]} dbConfig [description]
+	 * @param  {Object} dbConfig Database configuration info including user name, password, host and table.
 	 */
 	var map = function (dbConfig) {
 		DB_CONNECTOR = new DB(dbConfig);
@@ -78,18 +78,17 @@ MAP = (function() {
 	}
 
 	/**
-	 * [getAttributeInfo description]
-	 * @return {[type]} [description]
+	 * Gets information on tables and quantil threshold from database.
 	 */
 	var getAttributeInfo = function() {
 		DB_CONNECTOR.getAttributeInfo(handleAttributeInfo);
 	}
 
 	/**
-	 * [getFilter description]
-	 * @param  {[type]} lowerBound [description]
-	 * @param  {[type]} upperBound [description]
-	 * @return {[type]}            [description]
+	 * Returns filter definition for given bounds
+	 * @param  {Number} lowerBound The lower bound of the filter.
+	 * @param  {Number} upperBound The upper bound of the filter.
+	 * @return {String}            The filter definition encoded in Mapnik XML.
 	 */
 	var getFilter = function(lowerBound, upperBound) {
 		var filter = [];
@@ -105,11 +104,11 @@ MAP = (function() {
 	}
 
 	/**
-	 * [getSymolizer description]
-	 * @param  {[type]} color         [description]
-	 * @param  {[type]} renderOutline [description]
-	 * @param  {[type]} renderLabel   [description]
-	 * @return {[type]}               [description]
+	 * Returns defintion of the symbolizer
+	 * @param  {String} color         The fill color hexcode.
+	 * @param  {String} renderOutline The feature outline definition.
+	 * @param  {String} renderLabel   The feature label definition.
+	 * @return {String}               The symbolizer encoded in Mapnik XML.
 	 */
 	var getSymolizer = function(color, renderOutline, renderLabel) {
 		var symbolizer = ['<PolygonSymbolizer gamma=".65" fill-opacity="' + OPACITY + '" fill="#' + color +'"/>'];
@@ -121,10 +120,10 @@ MAP = (function() {
 	}
 
 	/**
-	 * [getStyleXML description] // NOT TESTED YET
-	 * @param  {[type]} layer [description]
-	 * @param  {[type]} zoom  [description]
-	 * @return {[type]}       [description]
+	 * Returns the style XML for the layer and zoom level
+	 * @param  {String} layer The layer for which the style is created.
+	 * @param  {Number} zoom  The zoom for which the style is created.
+	 * @return {String}       The style definition encoded in Mapnik XML.
 	 */
 	var getStyleXML = function(layer, zoom) {
 		var renderLabel, 
@@ -174,11 +173,7 @@ MAP = (function() {
 	}
 
 	/**
-	 * [getTile description]
-	 * @param  {[type]}   req  [description]
-	 * @param  {[type]}   res  [description]
-	 * @param  {Function} next [description]
-	 * @return {[type]}        [description]
+	 * Responds tohe getTile request by sending the image of the tile. See http://mcavage.github.com/node-restify/#Routing for parameter description.
 	 */
 	var getTile = function (req, res, next) {
 		var table = ATTRIBUTES[req.params.layer].table,
@@ -221,11 +216,7 @@ MAP = (function() {
 	}
 
 	/**
-	 * [getLegend description] // NOT TESTED YET
-	 * @param  {[type]}   req  [description]
-	 * @param  {[type]}   res  [description]
-	 * @param  {Function} next [description]
-	 * @return {[type]}        [description]
+	 * Responds tohe getLegend request by sending the image of the tile. See http://mcavage.github.com/node-restify/#Routing for parameter description.
 	 */
 	var getLegend = function (req, res, next) {
 		var quantiles = ATTRIBUTES[req.params.layer].quantiles;
