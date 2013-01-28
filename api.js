@@ -17,13 +17,30 @@ API = (function() {
 	 * EVENT HANDLER
 	 * *********************************************************************************/
 
+	/**
+	 * [sendTimestampResponse description]
+	 * @param  {[type]} result  [description]
+	 * @param  {[type]} request [description]
+	 */
+	var sendTimestampResponse = function(result, request) {
+
+		if (result.error) request.res.send(500, new Error('An error occured while getting timestamps from database.'));
+		else request.res.send('{"timestamps": ' + JSON.stringify(result.rows) + '}');
+
+		return request.next();
+	}
+
+	/**
+	 * [sendAttributesResponse description]
+	 * @param  {[type]} result  [description]
+	 * @param  {[type]} request [description]
+	 */
 	var sendAttributesResponse = function(result, request) {
 		request.res.header("Content-Type", "appplication/json");
-		if (result.error) {
-			request.res.send(500, new Error('An error occured while getting attributes from database.'));
-		} else {
-			request.res.send('{"attributes": ' + JSON.stringify(result.rows) + '}');
-		}
+		
+		if (result.error) request.res.send(500, new Error('An error occured while getting attributes from database.'));
+		else request.res.send('{"attributes": ' + JSON.stringify(result.rows) + '}');
+		
 		return request.next();
 	}
 
@@ -39,7 +56,11 @@ API = (function() {
 	 * @param  {Function} next [description]
 	 */
 	var getTimestamps = function(req, res, next) {
-
+		DB_CONNECTOR.getTimestamps(sendTimestampResponse, {
+			req: req,
+			res: res,
+			next: next
+		});
 	}
 
 	/**
@@ -75,6 +96,7 @@ API = (function() {
 	}
 
 	api.prototype.getAttributes = getAttributes;
+	api.prototype.getTimestamps = getTimestamps;
 
 	return api;
 }());

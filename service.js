@@ -29,7 +29,7 @@ SERVICE = (function() {
 		server.get(serverConfig.baseUrl + '/api/attributes/', api.getAttributes);
 		// server.get(serverConfig.baseUrl + '/api/attributes/:name', OSMatrixApi.getSingleAttribute);
 		// server.post(serverConfig.baseUrl + '/api/attributes/:name/geometryIntersect', OSMatrixApi.getSingleAttribute);
-		// server.get(serverConfig.baseUrl + '/api/timestamps/', OSMatrixApi.getTimestamps);
+		server.get(serverConfig.baseUrl + '/api/timestamps/', api.getTimestamps);
 		// server.get(serverConfig.baseUrl + '/api/cells/', OSMatrixApi.getCells);
 		// server.get(serverConfig.baseUrl + '/map/:layer', map.getTile);
 		// server.get(serverConfig.baseUrl + '/map/:layer/legend', map.getLegend);

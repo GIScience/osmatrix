@@ -135,9 +135,26 @@ DATABASE = (function() {
 		});
 	}
 
+	/**
+	 * [getTimeStamps description]
+	 * @param  {Function} callback [description]
+	 * @param  {[type]}   request  [description]
+	 */
+	var getTimestamps = function(callback, request) {
+		var connection = connect();
+		connection.query(
+			'SELECT id, date(time) AS timestamp FROM time', 
+			function (error, result) {
+				connection.end();
+				if (error) callback({error: error}, request);
+				else callback(result, request);
+		});
+	}
+
 	database.prototype.getAttributeInfo = getAttributeInfo;
 	database.prototype.getMapnikDatasourceConfig = getMapnikDatasourceConfig;
 	database.prototype.getAttributes = getAttributes;
+	database.prototype.getTimestamps = getTimestamps;
 
 	/**
 	 * [createDbConnector description]
