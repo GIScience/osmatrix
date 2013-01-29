@@ -54,34 +54,14 @@ MAP = (function() {
 	 * Constructor
 	 * @param  {Object} dbConfig Database configuration info including user name, password, host and table.
 	 */
-	var map = function (dbConnector) {
-		DB_CONNECTOR = new DB(dbConnector);
-		getAttributeInfo();
+	var map = function (dbConnector, attributes) {
+		DB_CONNECTOR = dbConnector;
+		ATTRIBUTES = attributes;
 	}
 
 	/* **********************************************************************************
 	 * EVENT HANDLER
 	 * *********************************************************************************/
-
-	/**
-	 * Handles results of getAttribute Info
-	 * @param  {Object} result Attrbute information as returned from getAttributeInfo
-	 */
-	var handleAttributeInfo = function(result) {
-		ATTRIBUTES = result;
-		console.log('Attribute information successfully loaded. Service ready.');
-	}
-
-	/* **********************************************************************************
-	 * CONTROL FUNCTIONS
-	 * *********************************************************************************/
-
-	/**
-	 * Gets information on tables and quantil threshold from database.
-	 */
-	var getAttributeInfo = function() {
-		DB_CONNECTOR.getAttributeInfo(handleAttributeInfo);
-	}
 
 	/**
 	 * Returns filter definition for given bounds
