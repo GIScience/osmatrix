@@ -151,10 +151,62 @@ DATABASE = (function() {
 		});
 	}
 
+	/**
+	 * [getFilters description]
+	 * @param  {[type]} params [description]
+	 * @return {[type]}        [description]
+	 */
+	var getFilters = function(table, params) {
+		var filters = [];
+
+		if (params.cells) {
+			filters.push('(' + table + '.cell_id IN (' + params.cells + '))');
+		}
+				
+		if (params.lat && params.lon) {
+			filters.push('(ST_Intersects(ST_Buffer(ST_Transform(geomfromtext(\'POINT(' + params.lon + ' ' + params.lat + ')\', 4326), 900913), 4000), geom))');
+			filters.push('((ST_Within(ST_Transform(geomfromtext(\'POINT(' + params.lon + ' ' + params.lat + ')\', 4326), 900913), geom)) OR (ST_DWithin((SELECT geom from cells WHERE ST_Within(ST_Transform(geomfromtext(\'POINT(' + params.lon + ' ' + params.lat + ')\', 4326), 900913), geom)), geom, 1)))');
+		}
+								
+		if (params.bbox) {
+			var bbox = params.bbox.split(',');
+			filters.push('(ST_Within(cells.geom, ST_Transform(geomfromtext(\'POLYGON((' + bbox[0] + ' ' + bbox[1] + ',' + bbox[0] + ' ' + bbox[3] + ',' + bbox[2] + ' ' + bbox[3] + ',' + bbox[2] + ' ' + bbox[1] + ',' + bbox[0] + ' ' + bbox[1] + '))\', 4326), 900913)))');			
+		}
+		
+		if (params.timestamps) {
+			var timestamps = params.timestamps.split(',');
+			var timeFilter = [];
+			for (var i = 0; i < timestamps.length; i++) {
+				timeFilter.push('(timesV.time <= to_timestamp(\'' + timestamps[i] + '\', \'YYYY-MM-DD\') AND ((timesE.time > to_timestamp(\'' + timestamps[i] + '\', \'YYYY-MM-DD\')) OR (timesE.time IS NULL)))');
+			}
+			filters.push(timeFilter.join(' OR '));
+		}
+
+		return (filters.length > 0) ? ' WHERE ' + filters.join(' AND ') : '';
+	}
+
+	/**
+	 * [getAttributeValues description]
+	 * @param  {[type]}   table       [description]
+	 * @param  {[type]}   queryParams [description]
+	 * @param  {Function} callback    [description]
+	 * @param  {[type]}   request     [description]
+	 * @return {[type]}               [description]
+	 */
+	var getAttributeValues = function(table, queryParams, callback, request) {
+		var filter;
+		if (queryParams) filter = getFilters(table, queryParams);
+
+		var attrQueryString = "SELECT " + table + ".id, " + table + ".cell_id, CAST(round(CAST(value AS numeric), 3) AS double precision) AS value, ST_AsGeoJSON(cells.geom) AS geometry, to_char(timesV.time, 'YYYY-MM-DD') AS timeValid, to_char(timesE.time, 'YYYY-MM-DD') AS timeExpired FROM " + table "LEFT JOIN cells ON (" + table + ".cell_id = cells.id) LEFT JOIN times AS timesV ON (" + table + ".valid = timesV.id) LEFT JOIN times  AS timesE ON (" + table + ".expired = timesE.id) " + filter;
+
+		console.log(attrQueryString);
+	}
+
 	database.prototype.getAttributeInfo = getAttributeInfo;
 	database.prototype.getMapnikDatasourceConfig = getMapnikDatasourceConfig;
 	database.prototype.getAttributes = getAttributes;
 	database.prototype.getTimestamps = getTimestamps;
+	database.prototype.getAttributeValues = getAttributeValues;
 
 	/**
 	 * [createDbConnector description]

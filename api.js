@@ -1,3 +1,6 @@
+var QUERYSTRING = require('querystring');
+var GAUSS_STATS = require('gauss');
+
 API = (function() {
 
 	/**
@@ -7,10 +10,17 @@ API = (function() {
 	var DB_CONNECTOR;
 
 	/**
+	 *
+	 * @type {Object}
+	 */
+	var ATTRIBUTES;
+
+	/**
 	 * Constructor
 	 */
-	var api = function(dbConnector) {
+	var api = function(dbConnector, attributes) {
 		DB_CONNECTOR = dbConnector;
+		ATTRIBUTES = attributes;
 	};
 
 	/* **********************************************************************************
@@ -23,7 +33,6 @@ API = (function() {
 	 * @param  {[type]} request [description]
 	 */
 	var sendTimestampResponse = function(result, request) {
-
 		if (result.error) request.res.send(500, new Error('An error occured while getting timestamps from database.'));
 		else request.res.send('{"timestamps": ' + JSON.stringify(result.rows) + '}');
 
@@ -42,6 +51,15 @@ API = (function() {
 		else request.res.send('{"attributes": ' + JSON.stringify(result.rows) + '}');
 		
 		return request.next();
+	}
+
+	/**
+	 * [sendAttributeValuesResponse description]
+	 * @param  {[type]} result  [description]
+	 * @param  {[type]} request [description]
+	 */
+	var sendAttributeValuesResponse = function(result, request) {
+
 	}
 
 
@@ -78,25 +96,35 @@ API = (function() {
 	}
 
 	/**
-	 * [getCells description]
+	 * [getAttributeValues description]
 	 * @param  {[type]}   req  [description]
 	 * @param  {[type]}   res  [description]
 	 * @param  {Function} next [description]
 	 */
-	var getCells = function(req, res, next) {
-
+	var getAttributeValues = function(req, res, next) {
+		var queryParams;
+		
+		if (req.query) queryParams = QUERYSTRING.parse(req.query);
+		DB_CONNECTOR.getAttributeValues(ATTRIBUTES[req.params.name].table, queryParams, sendAttributesResponse, {
+			req: req,
+			res: res,
+			next: next
+		});
 	}
 
 	/**
-	 * [getAttributeValues description]
-	 * @return {[type]} [description]
+	 * [geometryIntersection description]
+	 * @param  {[type]}   req  [description]
+	 * @param  {[type]}   res  [description]
+	 * @param  {Function} next [description]
 	 */
-	var getAttributeValues = function() {
+	var geometryIntersection = function(req, res, next) {
 
 	}
 
 	api.prototype.getAttributes = getAttributes;
 	api.prototype.getTimestamps = getTimestamps;
+	api.prototype.getAttributeValues = getAttributeValues;
 
 	return api;
 }());
