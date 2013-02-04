@@ -130,7 +130,7 @@ OSMatrixApi = {
 			filters.push('(ST_Intersects(cells.geom, ST_Transform(geomfromtext(\'' + Util.getWKTFromJSON(req.body.geometry) + '\', 4326), 900913)))');
 			if (req.body.cutGeometry) {
 				geomReq = 'ST_AsGeoJSON(ST_Intersection(cells.geom, ST_Transform(geomfromtext(\'' + Util.getWKTFromJSON(req.body.geometry) + '\', 4326), 900913)))';
-			} 
+			}
 		} else {
 			if (req.query) {
 				var queryParams = querystring.parse(req.query);
@@ -169,43 +169,43 @@ OSMatrixApi = {
 			fromWhere += ' WHERE ' + filters.join(' AND ');
 		}
 		
-		var statsQueryString = "SELECT to_char(timesV.time, 'YYYY-MM-DD') AS timestamp, min(value), max(value), avg(value), stddev_samp(value) AS stddev, var_samp(value) AS var";
+// 		var statsQueryString = "SELECT to_char(timesV.time, 'YYYY-MM-DD') AS timestamp, min(value), max(value), avg(value), stddev_samp(value) AS stddev, var_samp(value) AS var";
 			
-		var dbClient = DataBase.openDb();
+// 		var dbClient = DataBase.openDb();
 			
-		console.log('get stats');
-		var stats = dbClient.query(statsQueryString + ' ' + fromWhere + ' GROUP BY timesV.time;');
-		stats.on('row', function (row) {
-			statsResults.push(row);
-		});
+// 		console.log('get stats');
+// 		var stats = dbClient.query(statsQueryString + ' ' + fromWhere + ' GROUP BY timesV.time;');
+// 		stats.on('row', function (row) {
+// 			statsResults.push(row);
+// 		});
 		
-		stats.on('end', function () {
-			dbClient.end();
-			getTimes();
-		});
-		stats.on('error', function (error) {
-//			res.send(500, new Error('Error querying database for statistics: ' + error));
-			dbClient.end();
-		});
+// 		stats.on('end', function () {
+// 			dbClient.end();
+// 			getTimes();
+// 		});
+// 		stats.on('error', function (error) {
+// //			res.send(500, new Error('Error querying database for statistics: ' + error));
+// 			dbClient.end();
+// 		});
 		
-		var getTimes = function () {
-			console.log('get times');
-			var dbClient = DataBase.openDb();
-			var timestamps = dbClient.query('SELECT id, date(time) AS time FROM times');
+// 		var getTimes = function () {
+// 			console.log('get times');
+// 			var dbClient = DataBase.openDb();
+// 			var timestamps = dbClient.query('SELECT id, date(time) AS time FROM times');
 
-			timestamps.on('row', function (row) {
-				timesResults.push(row.time);
-			});
+// 			timestamps.on('row', function (row) {
+// 				timesResults.push(row.time);
+// 			});
 		
-			timestamps.on('end', function () {
-				dbClient.end();
-				getValues();
-			});
-			timestamps.on('error', function () {
-				dbClient.end();	
-				res.send(500, new Error('Error querying database for timestamps: ' + error));
-			});
-		};
+// 			timestamps.on('end', function () {
+// 				dbClient.end();
+// 				getValues();
+// 			});
+// 			timestamps.on('error', function () {
+// 				dbClient.end();	
+// 				res.send(500, new Error('Error querying database for timestamps: ' + error));
+// 			});
+// 		};
 			
 		var getValues = function () {
 			console.log('get values');
@@ -217,13 +217,13 @@ OSMatrixApi = {
 		  		"	to_char(timesV.time, 'YYYY-MM-DD') AS timeValid, " + 
   				"	to_char(timesE.time, 'YYYY-MM-DD') AS timeExpired ";
 			
-			
-			
 			var dbClient = DataBase.openDb();
 			
 			var dbResults = [];
 			var readItems = [];
-		console.log(attrQueryString + ' ' + fromWhere + ' ORDER BY cell_id, timevalid;');
+
+		// console.log(attrQueryString + ' ' + fromWhere + ' ORDER BY cell_id, timevalid;');
+		
 			var attributes = dbClient.query(attrQueryString + ' ' + fromWhere + ' ORDER BY cell_id, timevalid;');
 			attributes.on('row', function (row) {
 				var index = readItems.indexOf(row.cell_id);
@@ -466,7 +466,7 @@ OSMatrixMap = {
 		var mercator = require(path.join(__dirname, 'node_modules/mapnik/examples/utils/sphericalmercator.js'));
 		var parseXYZ = require(path.join(__dirname, 'node_modules/mapnik/examples/utils/tile.js')).parseXYZ;
 		var TMS_SCHEME = false;
-		
+
 		var table = attributes[req.params.layer].table;
 		var queryParams = querystring.parse(req.query);
 		var bbox = mercator.xyz_to_envelope(parseInt(queryParams.x), parseInt(queryParams.y), parseInt(queryParams.z), false);
