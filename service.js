@@ -10,6 +10,7 @@ var API = require('./api');
 SERVICE = (function() {
 	var service = {};
 	var attributes;
+	var timestamps;
 	var DB_CONNECTOR;
 	var SERVER_CONFIG;
 
@@ -19,8 +20,14 @@ SERVICE = (function() {
 	 */
 	var handleAttributeInfo = function(result) {
 		attributes = result;
-		serviceStartUp();
-		console.log('Attribute information successfully loaded. Starting service...');
+		console.log('Attribute information successfully loaded.');
+		if (attributes && timestamps) serviceStartUp();
+	}
+
+	var handleTimestamps = function(result) {
+		timestamps = result.rows;
+		console.log('Timestamps information successfully loaded.');
+		if (attributes && timestamps) serviceStartUp();
 	}
 
 	/* **********************************************************************************
@@ -36,14 +43,17 @@ SERVICE = (function() {
 		DB_CONNECTOR = new DB(dbConfig);
 		SERVER_CONFIG = serverConfig;
 		getAttributeInfo();
+		getTimestamps();
 	}
 
 	/**
 	 * [serviceStartUp description]
 	 */
 	var serviceStartUp = function() {
+		console.log('Starting up service...')
+
 		// var map = new MAP(DB_CONNECTOR, attributes);
-		var api = new API(DB_CONNECTOR, attributes);
+		var api = new API(DB_CONNECTOR, attributes, timestamps);
 
 		var server = RESTIFY.createServer({
 			name: 'OSMatrix'
@@ -69,7 +79,12 @@ SERVICE = (function() {
 	 */
 	var getAttributeInfo = function() {
 		DB_CONNECTOR.getAttributeInfo(handleAttributeInfo);
-		console.log('Getting attribute information on tables and quantiles. This may take a while, please be patient.')
+		console.log('Getting attribute information on tables and quantiles. This may take a while, please be patient.');
+	}
+
+	var getTimestamps = function() {
+		DB_CONNECTOR.getTimestamps(handleTimestamps);
+		console.log('Getting available timestamps.');
 	}
 
 	service.initialize = initialize;
