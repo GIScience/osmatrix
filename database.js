@@ -1,4 +1,5 @@
 var PG = require('pg');
+var GEOJSON2WKT = require('../Geojson2Wkt/Geojson2Wkt');
 
 DATABASE = (function() {
 	/**
@@ -191,7 +192,6 @@ DATABASE = (function() {
 	 * @param  {[type]}   queryParams [description]
 	 * @param  {Function} callback    [description]
 	 * @param  {[type]}   request     [description]
-	 * @return {[type]}               [description]
 	 */
 	var getAttributeValues = function(table, queryParams, callback, request) {
 		var filter;
@@ -199,7 +199,29 @@ DATABASE = (function() {
 
 		var attrQueryString = "SELECT " + table + ".id, " + table + ".cell_id, CAST(round(CAST(value AS numeric), 3) AS double precision) AS value, ST_AsGeoJSON(cells.geom) AS geometry, to_char(timesV.time, 'YYYY-MM-DD') AS timeValid, to_char(timesE.time, 'YYYY-MM-DD') AS timeExpired FROM " + table + " LEFT JOIN cells ON (" + table + ".cell_id = cells.id) LEFT JOIN times AS timesV ON (" + table + ".valid = timesV.id) LEFT JOIN times  AS timesE ON (" + table + ".expired = timesE.id) " + (filter ? filter : "") + "ORDER BY cell_id, timevalid";
 
-		console.log(attrQueryString);
+		var connection = connect();
+		connection.query(
+			attrQueryString,
+			function (error, result) {
+				connection.end();
+				if (error) callback({error: error}, request);
+				else callback(result, request);
+			}
+		);
+	}
+
+	/**
+	 * [getIntersection description]
+	 * @param  {[type]}   table    [description]
+	 * @param  {[type]}   geometry [description]
+	 * @param  {[type]}   cut      [description]
+	 * @param  {Function} callback [description]
+	 * @param  {[type]}   request  [description]
+	 */
+	var getIntersection = function(table, geometry, cut, callback, request) {
+		var geomReq = (cut ? 'ST_AsGeoJSON(ST_Intersection(cells.geom, ST_Transform(geomfromtext(\'' + GEOJSON2WKT.convert(geometry) + '\', 4326), 900913)))' : 'ST_AsGeoJSON(cells.geom)');
+
+		var attrQueryString = "SELECT " + table + ".id, " + table + ".cell_id, CAST(round(CAST(value AS numeric), 3) AS double precision) AS value, " + geomReq + " AS geometry, to_char(timesV.time, 'YYYY-MM-DD') AS timeValid, to_char(timesE.time, 'YYYY-MM-DD') AS timeExpired FROM " + table + " LEFT JOIN cells ON (" + table + ".cell_id = cells.id) LEFT JOIN times AS timesV ON (" + table + ".valid = timesV.id) LEFT JOIN times  AS timesE ON (" + table + ".expired = timesE.id) WHERE (ST_Intersects(cells.geom, ST_Transform(geomfromtext('" + GEOJSON2WKT.convert(geometry) + "', 4326), 900913))) ORDER BY cell_id, timevalid";
 
 		var connection = connect();
 		connection.query(
@@ -217,6 +239,7 @@ DATABASE = (function() {
 	database.prototype.getAttributes = getAttributes;
 	database.prototype.getTimestamps = getTimestamps;
 	database.prototype.getAttributeValues = getAttributeValues;
+	database.prototype.getIntersection = getIntersection;
 
 	/**
 	 * [createDbConnector description]

@@ -104,8 +104,6 @@ API = (function() {
 					}
 
 					responseResults.push(cell);
-
-
 					readItems.push(row.cell_id);
 				}
 			});
@@ -135,14 +133,14 @@ API = (function() {
 			cells.forEach(function(cell) {
 				vals.push(cell.values[time.timestamp]);
 			});
-			console.log(vals);
+			
 			vals = vals.toVector();
 
 			stats[time.timestamp] = {};
 			stats[time.timestamp].min = vals.min();
 			stats[time.timestamp].max = vals.max();
 			stats[time.timestamp].avg = vals.mean();
-			stats[time.timestamp].vari = vals.variance();
+			stats[time.timestamp].var = vals.variance();
 			stats[time.timestamp].std = vals.stdev();
 		});
 
@@ -201,12 +199,17 @@ API = (function() {
 	 * @param  {Function} next [description]
 	 */
 	var geometryIntersection = function(req, res, next) {
-
+		DB_CONNECTOR.getIntersection(ATTRIBUTES[req.params.name].table, req.body.geometry, req.body.cutGeometry, sendAttributeValuesResponse, {
+			req: req,
+			res: res,
+			next: next
+		})
 	}
 
 	api.prototype.getAttributes = getAttributes;
 	api.prototype.getTimestamps = getTimestamps;
 	api.prototype.getAttributeValues = getAttributeValues;
+	api.prototype.geometryIntersection = geometryIntersection;
 
 	return api;
 }());

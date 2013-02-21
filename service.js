@@ -3,7 +3,7 @@
  ***********************************************************************/
 var RESTIFY = require('restify');
 var DB = require('./database');
-// var MAP = require('./map');
+var MAP = require('./map');
 var API = require('./api');
 
 
@@ -63,11 +63,11 @@ SERVICE = (function() {
 
 		server.get(SERVER_CONFIG.baseUrl + '/api/attributes/', api.getAttributes);
 		server.get(SERVER_CONFIG.baseUrl + '/api/attributes/:name', api.getAttributeValues);
-		// server.post(SERVER_CONFIG.baseUrl + '/api/attributes/:name/geometryIntersect', OSMatrixApi.getSingleAttribute);
+		server.post(SERVER_CONFIG.baseUrl + '/api/attributes/:name/geometryIntersect', api.geometryIntersection);
 		server.get(SERVER_CONFIG.baseUrl + '/api/timestamps/', api.getTimestamps);
 		// server.get(SERVER_CONFIG.baseUrl + '/api/cells/', OSMatrixApi.getCells);
-		// server.get(SERVER_CONFIG.baseUrl + '/map/:layer', map.getTile);
-		// server.get(SERVER_CONFIG.baseUrl + '/map/:layer/legend', map.getLegend);
+		server.get(SERVER_CONFIG.baseUrl + '/map/:layer', map.getTile);
+		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/legend', map.getLegend);
 
 		server.listen(SERVER_CONFIG.port, function() {
 			console.log('Service ready: %s listening at %s', server.name, server.url);

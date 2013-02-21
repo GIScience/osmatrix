@@ -23,6 +23,11 @@
 # Logs and databases #
 ######################
 *.log
+*.aux
+*.bbl
+*.blg
+*.lof
+*.synctex.gz
 
 # OS generated files #
 ######################
