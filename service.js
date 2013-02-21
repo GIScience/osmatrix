@@ -52,7 +52,7 @@ SERVICE = (function() {
 	var serviceStartUp = function() {
 		console.log('Starting up service...')
 
-		// var map = new MAP(DB_CONNECTOR, attributes);
+		var map = new MAP(DB_CONNECTOR, attributes);
 		var api = new API(DB_CONNECTOR, attributes, timestamps);
 
 		var server = RESTIFY.createServer({

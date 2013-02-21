@@ -40,6 +40,7 @@ API = (function() {
 	 * @param  {[type]} request [description]
 	 */
 	var sendTimestampResponse = function(result, request) {
+
 		if (result.error) request.res.send(500, new Error('An error occured while getting timestamps from database.'));
 		else request.res.send('{"timestamps": ' + JSON.stringify(result.rows) + '}');
 
@@ -110,7 +111,7 @@ API = (function() {
 
 			var stats = getTimestampStats(responseResults);
 			
-			request.res.send('{result: ' + JSON.stringify(responseResults) + ', stats: ' + JSON.stringify(stats));
+			request.res.send('{"result": ' + JSON.stringify(responseResults) + ', "stats": ' + JSON.stringify(stats) + '}');
 		}
 
 		return request.next();

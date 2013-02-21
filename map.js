@@ -95,7 +95,7 @@ MAP = (function() {
 		if (renderOutline) symbolizer.push(renderOutline);
 		if (renderLabel) symbolizer.push(renderLabel);
 
-		return symbolizer;
+		return symbolizer.join('');
 	}
 
 	/**
