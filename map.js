@@ -4,16 +4,28 @@ var MAPNIK = require('mapnik');
 
 MAP = (function() {
 	/**
-	 * Defines the color scheme of the map.
+	 * Defines the color scheme of standard maps.
 	 * @type {Array}
 	 */
 	var COLORS = ["FFFFFF", "FFF7FB", "ECE7F2", "D0D1E6", "A6BDDB", "74A9CF", "3690C0", "0570B0", "045A8D", "023858"]
 
 	/**
+	 * Defines the color scheme of difference maps.
+	 * @type {Array}
+	 */
+	var DIFF_COLORS = ["A50026", "D73027", "F46D43", "FDAE61", "FEE08B", "FFFFBF", "D9EF8B", "A6D96A", "66BD63", "1A9850", "006837"]
+
+	/**
+	 * Quantiles applied to difference maps.
+	 * @type {Array}
+	 */
+	var DIFF_QUANTILES = [0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8];
+
+	/**
 	 * Defines the color of features not covered by the color scheme.
 	 * @type {String}
 	 */
-	var ELSE_COLOR = "ae3825"; 
+	var ELSE_COLOR = "cccccc"; 
 
 	/**
 	 * The opacity of the OSMatrix layer.
@@ -88,15 +100,16 @@ MAP = (function() {
 
 	/**
 	 * Returns the style XML for the layer and zoom level
-	 * @param  {String} layer The layer for which the style is created.
-	 * @param  {Number} zoom  The zoom for which the style is created.
-	 * @return {String}       The style definition encoded in Mapnik XML.
+	 * @param  {String}  layer   The layer for which the style is created.
+	 * @param  {Number}  zoom    The zoom for which the style is created.
+	 * @param  {Boolean} diffMap Indicates if the style is applied to difference maps.
+	 * @return {String}          The style definition encoded in Mapnik XML.
 	 */
-	var getStyleXML = function(layer, zoom) {
+	var getStyleXML = function(layer, zoom, diffMap) {
 		var renderLabel, 
 			renderOutline, 
 			strokeWidth = 1,
-			quantiles = ATTRIBUTES[layer].quantiles;
+			quantiles = diffMap ? DIFF_QUANTILES : ATTRIBUTES[layer].quantiles;
 
 		if (zoom > 11) strokeWidth = 2;
 		if (zoom > 12) {
@@ -113,8 +126,12 @@ MAP = (function() {
 		quantiles.forEach(function(quantil, i) {
 			style.push('<Rule>');
 
-			if (i === 0) style.push(getFilter(undefined, quantil));
-			else style.push(getFilter(quantiles[i-1], quantil));
+			if (diffMap && i === 5) {
+				style.push('<Filter>[value] = quantil</Filter>');
+			} else {
+				if (i === 0) style.push(getFilter(undefined, quantil));
+				else style.push(getFilter(quantiles[i-1], quantil));	
+			}
 
 			style.push(getSymolizer(COLORS[i], renderOutline, renderLabel));
 
@@ -142,9 +159,8 @@ MAP = (function() {
 	/**
 	 * Responds tohe getTile request by sending the image of the tile. See http://mcavage.github.com/node-restify/#Routing for parameter description.
 	 */
-	var getTile = function (req, res, next) {
+	var getTile = function (req, res, next, timestamps) {
 		var table = ATTRIBUTES[req.params.layer].table,
-			// queryParams = QUERYSTRING.parse(req.query),
 			bbox = MERCATOR.xyz_to_envelope(parseInt(req.params.x), parseInt(req.params.y), parseInt(req.params.z), false),
 			map = new MAPNIK.Map(256, 256, MERCATOR.proj4);
 
@@ -159,7 +175,7 @@ MAP = (function() {
         	}
 
         	var attributesLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
-        	attributesLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, req.params.timestamp, req.params.layer.toLowerCase().indexOf('date') == 0));
+        	attributesLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, timestamps, req.params.layer.toLowerCase().indexOf('date') == 0));
         	attributesLayer.styles = [req.params.layer];
         	map.add_layer(attributesLayer);
 
@@ -178,6 +194,21 @@ MAP = (function() {
             	}
            	});
 		return next();
+	}
+
+	/**
+	 * [getDiff description]
+	 * @param  {[type]}   req  [description]
+	 * @param  {[type]}   res  [description]
+	 * @param  {Function} next [description]
+	 * @return {[type]}        [description]
+	 */
+	var getDiffMap = function (req, res, next) {
+		// TODO: extract time steps and call getTile
+	}
+
+	var getMap = function(req, res, next) {
+		getTile(req, res, next, req.params.timestamp)
 	}
 
 	/**
@@ -201,7 +232,7 @@ MAP = (function() {
 		return next();
 	}
 
-	map.prototype.getTile = getTile;
+	map.prototype.getMap = getMap;
 	map.prototype.getLegend = getLegend;
 	return map;
 }());

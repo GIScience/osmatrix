@@ -94,8 +94,8 @@ DATABASE = (function() {
 			var valueRequest = table + ".value AS value, ";
 			var labelRequest = "CAST(round(CAST(" + table + ".value AS numeric), 3) AS text) AS label, "
 			if (isDate) {
-				valueRequest = "	to_char(to_timestamp(" + table + ".value / 1000), 'YYYY-MM-DD') AS value, ";
-				labelRequest = "	to_char(to_timestamp(" + table + ".value / 1000), 'YYYY-MM-DD') AS label, "
+				valueRequest = "to_char(to_timestamp(" + table + ".value / 1000), 'YYYY-MM-DD') AS value, ";
+				labelRequest = "to_char(to_timestamp(" + table + ".value / 1000), 'YYYY-MM-DD') AS label, "
 			} 
 
 			query = [
