@@ -165,9 +165,9 @@ MAP = (function() {
 				map.bufferSize = 64;
         		map.fromStringSync(getStyleXML(req.params.layer, queryParams.z), {strict: true});
 
-        		if (queryParams.z > 8) {
+        		if (queryParams.z > 9) {
 					var cellsLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
-   		     		cellsLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, queryParams.timestamp, req.params.layer.toLowerCase().indexOf('date') == 0));
+   		     		cellsLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig('cells', bbox));
 	        		cellsLayer.styles = ['cells'];
 	        		map.add_layer(cellsLayer);
         		}
@@ -183,8 +183,13 @@ MAP = (function() {
               		if (err) {
                 		throw err;
               		} else {
-                		res.writeHead(200, {'Content-Type': 'image/png'});
-                		res.end(im.encodeSync('png'));
+              			try {
+	              			res.writeHead(200, {'Content-Type': 'image/png'});
+							res.end(im.encodeSync('png'));	
+              			} catch (e) {
+              				console.log(e + ' at ' + new Date());
+              			}
+                		
               		}
            		});
 			} else {
