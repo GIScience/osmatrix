@@ -28,18 +28,6 @@ MAP = (function() {
 	var MERCATOR = require(PATH.resolve(__dirname, '../node_modules/mapnik/examples/utils/sphericalmercator.js'));
 
 	/**
-	 * Parses the XYZ scheme into bounding box.
-	 * @type {Function}
-	 */
-	var PARSE_XYZ = require(PATH.resolve(__dirname, '../node_modules/mapnik/examples/utils/tile.js')).parseXYZ;
-
-	/**
-	 * Indicates if the request follows TMS scheme.
-	 * @type {Boolean}
-	 */
-	var TMS_SCHEME = false;
-
-	/**
 	 * Contains table names and quantile thresholds for attributes.
 	 * @type {Object}
 	 */
@@ -110,11 +98,11 @@ MAP = (function() {
 			strokeWidth = 1,
 			quantiles = ATTRIBUTES[layer].quantiles;
 
-			if (zoom > 11) strokeWidth = 2;
-			if (zoom > 12) {
-				renderLabel = '<TextSymbolizer face-name="DejaVu Sans Book" size="16" dy="-10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[cell_id]</TextSymbolizer><TextSymbolizer face-name="DejaVu Sans Book" size="16" dy="10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[label]</TextSymbolizer>';
-				renderOutline = '<LineSymbolizer stroke="#000000" stroke-width="2"/>';
-			}
+		if (zoom > 11) strokeWidth = 2;
+		if (zoom > 12) {
+			renderLabel = '<TextSymbolizer face-name="DejaVu Sans Book" size="16" dy="-10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[cell_id]</TextSymbolizer><TextSymbolizer face-name="DejaVu Sans Book" size="16" dy="10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[label]</TextSymbolizer>';
+			renderOutline = '<LineSymbolizer stroke="#000000" stroke-width="2"/>';
+		}
 
 		var style = [
 			'<?xml version="1.0" encoding="utf-8"?>',
@@ -156,47 +144,39 @@ MAP = (function() {
 	 */
 	var getTile = function (req, res, next) {
 		var table = ATTRIBUTES[req.params.layer].table,
-			queryParams = QUERYSTRING.parse(req.query),
-			bbox = MERCATOR.xyz_to_envelope(parseInt(queryParams.x), parseInt(queryParams.y), parseInt(queryParams.z), false);
+			// queryParams = QUERYSTRING.parse(req.query),
+			bbox = MERCATOR.xyz_to_envelope(parseInt(req.params.x), parseInt(req.params.y), parseInt(req.params.z), false),
 			map = new MAPNIK.Map(256, 256, MERCATOR.proj4);
 
-		PARSE_XYZ(req, TMS_SCHEME, function(error,params) {
-			if (!error) {
-				map.bufferSize = 64;
-        		map.fromStringSync(getStyleXML(req.params.layer, queryParams.z), {strict: true});
+			map.bufferSize = 64;
+       		map.fromStringSync(getStyleXML(req.params.layer, req.params.z), {strict: true});
 
-        		if (queryParams.z > 9) {
-					var cellsLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
-   		     		cellsLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig('cells', bbox));
-	        		cellsLayer.styles = ['cells'];
-	        		map.add_layer(cellsLayer);
-        		}
+       		if (req.params.z > 9) {
+				var cellsLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
+   		     	cellsLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig('cells', bbox));
+	        	cellsLayer.styles = ['cells'];
+	        	map.add_layer(cellsLayer);
+        	}
 
-        		var attributesLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
-        		attributesLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, queryParams.timestamp, req.params.layer.toLowerCase().indexOf('date') == 0));
-        		attributesLayer.styles = [req.params.layer];
-        		map.add_layer(attributesLayer);
+        	var attributesLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
+        	attributesLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, req.params.timestamp, req.params.layer.toLowerCase().indexOf('date') == 0));
+        	attributesLayer.styles = [req.params.layer];
+        	map.add_layer(attributesLayer);
 
-        		map.extent = bbox;
-            	var im = new MAPNIK.Image(map.width, map.height);
-			    map.render(im, function(err, im) {
-              		if (err) {
-                		throw err;
-              		} else {
-              			try {
-	              			res.writeHead(200, {'Content-Type': 'image/png'});
-							res.end(im.encodeSync('png'));	
-              			} catch (e) {
-              				console.log(e + ' at ' + new Date());
-              			}
-                		
-              		}
-           		});
-			} else {
-				res.writeHead(500, {'Content-Type': 'text/plain'});
-				res.end(error.message);
-			}
-		});
+        	map.extent = bbox;
+            var im = new MAPNIK.Image(map.width, map.height);
+			map.render(im, function(err, im) {
+            	if (err) {
+               		throw err;
+            	} else {
+            		try {
+	          			res.writeHead(200, {'Content-Type': 'image/png'});
+						res.end(im.encodeSync('png'));	
+            		} catch (e) {
+            			console.log(e + ' at ' + new Date());
+            		}
+            	}
+           	});
 		return next();
 	}
 

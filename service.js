@@ -65,8 +65,7 @@ SERVICE = (function() {
 		server.get(SERVER_CONFIG.baseUrl + '/api/attributes/:name', api.getAttributeValues);
 		server.post(SERVER_CONFIG.baseUrl + '/api/attributes/:name/geometryIntersect', api.geometryIntersection);
 		server.get(SERVER_CONFIG.baseUrl + '/api/timestamps/', api.getTimestamps);
-		// server.get(SERVER_CONFIG.baseUrl + '/api/cells/', OSMatrixApi.getCells);
-		server.get(SERVER_CONFIG.baseUrl + '/map/:layer', map.getTile);
+		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/:z/:x/:y/:timestamp', map.getTile);
 		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/legend', map.getLegend);
 
 		server.listen(SERVER_CONFIG.port, function() {
