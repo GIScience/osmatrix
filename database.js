@@ -12,6 +12,13 @@ DATABASE = (function() {
 	 */
 	var config;
 
+	var REQUEST_TYPE = {
+		CELL: 0,
+		DATE: 1,
+		TIME: 2,
+		DIFF: 3
+	}
+
 	/**
 	 * [database description]
 	 * @param  {[type]} config [description]
@@ -86,31 +93,45 @@ DATABASE = (function() {
 	 * [getMapnikDatasourceConfig description]
 	 * @return {[type]} [description]
 	 */
-	var getMapnikDatasourceConfig = function(table, bbox, timestamp, isDate) {
+	var getMapnikDatasourceConfig = function(table, bbox, type, timestamp) {
 		var query;
-		if (table === 'cells') {
-			query = "(SELECT geom from cells) as cells";
-		} else {
-			var valueRequest = table + ".value AS value, ";
-			var labelRequest = "CAST(round(CAST(" + table + ".value AS numeric), 3) AS text) AS label, "
-			if (isDate) {
-				valueRequest = "to_char(to_timestamp(" + table + ".value / 1000), 'YYYY-MM-DD') AS value, ";
-				labelRequest = "to_char(to_timestamp(" + table + ".value / 1000), 'YYYY-MM-DD') AS label, "
-			} 
+		switch (type) {
+			case REQUEST_TYPE.CELL:
+				query = "(SELECT geom from cells) as cells";
+				break;
+			case REQUEST_TYPE.DIFF:
+				query = [
+					"(SELECT cells.id as cell_id, geom, starttable.value AS startVal, endtable.value AS endVal, ",
+					"(coalesce(endtable.value, 0.001)/coalesce(starttable.value, 0.001)) as value, ",
+					"CAST(round(CAST(((coalesce(endtable.value, 0.001)/coalesce(starttable.value, 0.001)) * 100) AS numeric), 1) AS text) || '%' AS label FROM cells ",
+					"LEFT JOIN (SELECT cell_id, value FROM attribute_003 WHERE valid <= 2 AND (expired IS NULL OR expired > 2)) as starttable ON (cells.id = starttable.cell_id)", 
+					"LEFT JOIN (SELECT cell_id, value FROM attribute_003 WHERE valid <= 4 AND (expired IS NULL OR expired > 4)) as endtable ON (cells.id = endtable.cell_id) ",
+					"WHERE ",
+					"(ST_Intersects(geom, geomfromtext(\'POLYGON((" + bbox[0] + " " + bbox[1] + "," + bbox[0] + " " + bbox[3] + "," + bbox[2] + " " + bbox[3] + "," + bbox[2] + " " + bbox[1] + "," + bbox[0] + " " + bbox[1] + "))\', 900913))) AND ",
+					"starttable.value IS NOT NULL OR endtable.value IS NOT NULL) as awesometable"
+				].join('');
+				break;
+			default:
+				var valueRequest = table + ".value AS value, ";
+				var labelRequest = "CAST(round(CAST(" + table + ".value AS numeric), 3) AS text) AS label, "
+				if (type === REQUEST_TYPE.DATE) {
+					valueRequest = "to_char(to_timestamp(" + table + ".value / 1000), 'YYYY-MM-DD') AS value, ";
+					labelRequest = "to_char(to_timestamp(" + table + ".value / 1000), 'YYYY-MM-DD') AS label, "
+				}
 
-			query = [
-				"(SELECT ",
-	  			table + ".id, ", 
-				"	'#' || CAST(" + table + ".cell_id AS text) AS cell_id, ",
-	  			valueRequest,
-	  			labelRequest, 
-	  			" 	geom ",
-	  			"FROM " + table,
-				" LEFT JOIN cells ON (" + table + ".cell_id = cells.id) ",
-				"WHERE ",
-				"(ST_Intersects(geom, geomfromtext(\'POLYGON((" + bbox[0] + " " + bbox[1] + "," + bbox[0] + " " + bbox[3] + "," + bbox[2] + " " + bbox[3] + "," + bbox[2] + " " + bbox[1] + "," + bbox[0] + " " + bbox[1] + "))\', 900913))) AND ",
-				"(" + table + ".valid <= " + timestamp + " AND ((" + table + ".expired > " + timestamp + ") OR (" + table + ".expired IS NULL)))) as awesometable"
-			].join('');
+				query = [
+					"(SELECT ",
+		  			table + ".id, ", 
+					"	'#' || CAST(" + table + ".cell_id AS text) AS cell_id, ",
+		  			valueRequest,
+		  			labelRequest, 
+		  			" 	geom ",
+		  			"FROM " + table,
+					" LEFT JOIN cells ON (" + table + ".cell_id = cells.id) ",
+					"WHERE ",
+					"(ST_Intersects(geom, geomfromtext(\'POLYGON((" + bbox[0] + " " + bbox[1] + "," + bbox[0] + " " + bbox[3] + "," + bbox[2] + " " + bbox[3] + "," + bbox[2] + " " + bbox[1] + "," + bbox[0] + " " + bbox[1] + "))\', 900913))) AND ",
+					"(" + table + ".valid <= " + timestamp + " AND ((" + table + ".expired > " + timestamp + ") OR (" + table + ".expired IS NULL)))) as awesometable"
+				].join('');
 		}
 
 		return {
@@ -239,6 +260,7 @@ DATABASE = (function() {
 		);
 	}
 
+	database.prototype.REQUEST_TYPE = REQUEST_TYPE;
 	database.prototype.getAttributeInfo = getAttributeInfo;
 	database.prototype.getMapnikDatasourceConfig = getMapnikDatasourceConfig;
 	database.prototype.getAttributes = getAttributes;

@@ -13,13 +13,19 @@ MAP = (function() {
 	 * Defines the color scheme of difference maps.
 	 * @type {Array}
 	 */
-	var DIFF_COLORS = ["A50026", "D73027", "F46D43", "FDAE61", "FEE08B", "FFFFBF", "D9EF8B", "A6D96A", "66BD63", "1A9850", "006837"]
+	var DIFF_COLORS = ["A50026", "D73027", "F46D43", "FDAE61", "FEE08B", "D9EF8B", "A6D96A", "66BD63", "1A9850", "006837"]
 
 	/**
 	 * Quantiles applied to difference maps.
 	 * @type {Array}
 	 */
 	var DIFF_QUANTILES = [0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8];
+
+	/**
+	 * [NULL_COLOR description]
+	 * @type {String}
+	 */
+	var NULL_COLOR = "ffffff"; 
 
 	/**
 	 * Defines the color of features not covered by the color scheme.
@@ -74,9 +80,9 @@ MAP = (function() {
 
 		filter.push('<Filter>');
 
-		if (lowerBound) filter.push('[value] &gt; ' + lowerBound);
+		if (lowerBound) filter.push('[value] &gt;= ' + lowerBound);
 		if (lowerBound && upperBound) filter.push(' and ');
-		if (upperBound) filter.push('[value] &lt;= ' + upperBound);
+		if (upperBound) filter.push('[value] &lt; ' + upperBound);
 
 		filter.push('</Filter>');
 		return filter.join('');
@@ -109,7 +115,8 @@ MAP = (function() {
 		var renderLabel, 
 			renderOutline, 
 			strokeWidth = 1,
-			quantiles = diffMap ? DIFF_QUANTILES : ATTRIBUTES[layer].quantiles;
+			quantiles = (diffMap ? DIFF_QUANTILES : ATTRIBUTES[layer].quantiles);
+			colors = (diffMap ? DIFF_COLORS : COLORS);
 
 		if (zoom > 11) strokeWidth = 2;
 		if (zoom > 12) {
@@ -126,20 +133,23 @@ MAP = (function() {
 		quantiles.forEach(function(quantil, i) {
 			style.push('<Rule>');
 
-			if (diffMap && i === 5) {
-				style.push('<Filter>[value] = quantil</Filter>');
-			} else {
-				if (i === 0) style.push(getFilter(undefined, quantil));
-				else style.push(getFilter(quantiles[i-1], quantil));	
-			}
+			if (i === 0) style.push(getFilter(undefined, quantil));
+			else style.push(getFilter(quantiles[i-1], quantil));
 
-			style.push(getSymolizer(COLORS[i], renderOutline, renderLabel));
+			style.push(getSymolizer(colors[i], renderOutline, renderLabel));
+
+			if (diffMap && i === 4) {
+				style.push('</Rule>');
+				style.push('<Rule>');
+				style.push('<Filter>[value] = ' + quantil + '</Filter>');
+				style.push(getSymolizer(NULL_COLOR, renderOutline, renderLabel));
+			}
 
 			if (i === quantiles.length-1) {
 				style.push('</Rule>');
 				style.push('<Rule>');
 				style.push(getFilter(quantil, undefined));
-				style.push(getSymolizer(COLORS[i+1], renderOutline, renderLabel));				
+				style.push(getSymolizer(colors[i+1], renderOutline, renderLabel));				
 			}
 
 			style.push('</Rule>');
@@ -159,23 +169,23 @@ MAP = (function() {
 	/**
 	 * Responds tohe getTile request by sending the image of the tile. See http://mcavage.github.com/node-restify/#Routing for parameter description.
 	 */
-	var getTile = function (req, res, next, timestamps) {
+	var getTile = function (req, res, next, type, timestamps) {
 		var table = ATTRIBUTES[req.params.layer].table,
 			bbox = MERCATOR.xyz_to_envelope(parseInt(req.params.x), parseInt(req.params.y), parseInt(req.params.z), false),
 			map = new MAPNIK.Map(256, 256, MERCATOR.proj4);
 
 			map.bufferSize = 64;
-       		map.fromStringSync(getStyleXML(req.params.layer, req.params.z), {strict: true});
+       		map.fromStringSync(getStyleXML(req.params.layer, req.params.z, (type === DB_CONNECTOR.REQUEST_TYPE.DIFF)), {strict: true});
 
        		if (req.params.z > 9) {
 				var cellsLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
-   		     	cellsLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig('cells', bbox));
+   		     	cellsLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig('cells', bbox, DB_CONNECTOR.REQUEST_TYPE.CELL));
 	        	cellsLayer.styles = ['cells'];
 	        	map.add_layer(cellsLayer);
         	}
 
         	var attributesLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
-        	attributesLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, timestamps, req.params.layer.toLowerCase().indexOf('date') == 0));
+        	attributesLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, type, timestamps));
         	attributesLayer.styles = [req.params.layer];
         	map.add_layer(attributesLayer);
 
@@ -204,11 +214,19 @@ MAP = (function() {
 	 * @return {[type]}        [description]
 	 */
 	var getDiffMap = function (req, res, next) {
-		// TODO: extract time steps and call getTile
+		getTile(req, res, next, DB_CONNECTOR.REQUEST_TYPE.DIFF, QUERYSTRING.parse(req.query));
 	}
 
+	/**
+	 * [getMap description]
+	 * @param  {[type]}   req  [description]
+	 * @param  {[type]}   res  [description]
+	 * @param  {Function} next [description]
+	 * @return {[type]}        [description]
+	 */
 	var getMap = function(req, res, next) {
-		getTile(req, res, next, req.params.timestamp)
+		var type = (req.params.layer.toLowerCase().indexOf('date') == 0 ? DB_CONNECTOR.REQUEST_TYPE.DATE : DB_CONNECTOR.REQUEST_TYPE.TIME);
+		getTile(req, res, next,  type, req.params.timestamp);
 	}
 
 	/**
@@ -233,6 +251,7 @@ MAP = (function() {
 	}
 
 	map.prototype.getMap = getMap;
+	map.prototype.getDiffMap = getDiffMap;
 	map.prototype.getLegend = getLegend;
 	return map;
 }());
