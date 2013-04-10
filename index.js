@@ -9,7 +9,7 @@ var OSMATRIX_SERVICE = require('./service');
  ***********************************************************************/
 
 var SERVER = {
-	baseUrl: 'osmatrix/',
+	baseUrl: 'osmatrix',
 	port: 50684
 }
 

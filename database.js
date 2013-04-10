@@ -1,5 +1,6 @@
 var PG = require('pg');
 var GEOJSON2WKT = require('../Geojson2Wkt/Geojson2Wkt');
+var SQL = require('squel');
 
 DATABASE = (function() {
 	/**
@@ -104,8 +105,8 @@ DATABASE = (function() {
 					"(SELECT cells.id as cell_id, geom, starttable.value AS startVal, endtable.value AS endVal, ",
 					"(coalesce(endtable.value, 0.001)/coalesce(starttable.value, 0.001)) as value, ",
 					"CAST(round(CAST(((coalesce(endtable.value, 0.001)/coalesce(starttable.value, 0.001)) * 100) AS numeric), 1) AS text) || '%' AS label FROM cells ",
-					"LEFT JOIN (SELECT cell_id, value FROM attribute_003 WHERE valid <= 2 AND (expired IS NULL OR expired > 2)) as starttable ON (cells.id = starttable.cell_id)", 
-					"LEFT JOIN (SELECT cell_id, value FROM attribute_003 WHERE valid <= 4 AND (expired IS NULL OR expired > 4)) as endtable ON (cells.id = endtable.cell_id) ",
+					"LEFT JOIN (SELECT cell_id, value FROM " + table + " WHERE valid <= 2 AND (expired IS NULL OR expired > 2)) as starttable ON (cells.id = starttable.cell_id)", 
+					"LEFT JOIN (SELECT cell_id, value FROM " + table + " WHERE valid <= 4 AND (expired IS NULL OR expired > 4)) as endtable ON (cells.id = endtable.cell_id) ",
 					"WHERE ",
 					"(ST_Intersects(geom, geomfromtext(\'POLYGON((" + bbox[0] + " " + bbox[1] + "," + bbox[0] + " " + bbox[3] + "," + bbox[2] + " " + bbox[3] + "," + bbox[2] + " " + bbox[1] + "," + bbox[0] + " " + bbox[1] + "))\', 900913))) AND ",
 					"starttable.value IS NOT NULL OR endtable.value IS NOT NULL) as awesometable"
@@ -175,6 +176,51 @@ DATABASE = (function() {
 				connection.end();
 				if (error) callback({error: error}, request);
 				else callback(result, request);
+		});
+	}
+
+	var getCapabilities = function(callback, request) {
+		var connection = connect(),
+			pending = 2,
+			timeStampSql,
+			attributeSql
+			requestResult = {};
+
+		timeStampSql = SQL.select()
+						.from('times')
+						.field('id')
+						.field('date(time)', 'timestamp');
+
+		attributeSql = SQL.select()
+						.from('attribute_types')
+						.field('id')
+						.field('attribute', 'name')
+						.field('description')
+						.field('title')
+						.where('id NOT IN (19)')
+						.order('title');
+
+		connection.query(attributeSql.toString(), function(error, result) {
+			pending--;
+			if (error) requestResult.error = result.error;
+			else requestResult.attributes = result.rows;
+			
+			if (pending === 0) {
+				connection.end();
+				callback(requestResult, request);
+			};
+		});
+
+		connection.query(timeStampSql.toString(), function(error, result) {
+			pending--;
+
+			if (error) requestResult.error = result.error;
+			else requestResult.timestamps = result.rows;
+			
+			if (pending === 0) {
+				connection.end();
+				callback(requestResult, request);
+			};
 		});
 	}
 
@@ -261,6 +307,7 @@ DATABASE = (function() {
 	}
 
 	database.prototype.REQUEST_TYPE = REQUEST_TYPE;
+	database.prototype.getCapabilities = getCapabilities;
 	database.prototype.getAttributeInfo = getAttributeInfo;
 	database.prototype.getMapnikDatasourceConfig = getMapnikDatasourceConfig;
 	database.prototype.getAttributes = getAttributes;

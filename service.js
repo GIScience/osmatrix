@@ -61,6 +61,7 @@ SERVICE = (function() {
 
 		server.use(RESTIFY.bodyParser({ mapParams: false }));
 
+		server.get(SERVER_CONFIG.baseUrl + '/api/', api.getCapabilities);
 		server.get(SERVER_CONFIG.baseUrl + '/api/attributes/', api.getAttributes);
 		server.get(SERVER_CONFIG.baseUrl + '/api/attributes/:name', api.getAttributeValues);
 		server.post(SERVER_CONFIG.baseUrl + '/api/attributes/:name/geometryIntersect', api.geometryIntersection);

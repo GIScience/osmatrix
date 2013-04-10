@@ -34,13 +34,21 @@ API = (function() {
 	 * EVENT HANDLER
 	 * *********************************************************************************/
 
+	var sendCapabilitiesResponse = function(result, request) {
+		request.res.header("Content-Type", "appplication/json");
+
+		if (result.error) request.res.send(500, new Error('An error occured while getting capabilities from database.'));
+		else request.res.send(JSON.stringify(result));
+
+		return request.next();
+	}
+
 	/**
 	 * [sendTimestampResponse description]
 	 * @param  {[type]} result  [description]
 	 * @param  {[type]} request [description]
 	 */
 	var sendTimestampResponse = function(result, request) {
-
 		if (result.error) request.res.send(500, new Error('An error occured while getting timestamps from database.'));
 		else request.res.send('{"timestamps": ' + JSON.stringify(result.rows) + '}');
 
@@ -176,6 +184,14 @@ API = (function() {
 		});
 	}
 
+	var getCapabilities = function (req, res, next) {
+		DB_CONNECTOR.getCapabilities(sendCapabilitiesResponse, {
+			req: req,
+			res: res,
+			next: next
+		});	
+	}
+
 	/**
 	 * [getAttributeValues description]
 	 * @param  {[type]}   req  [description]
@@ -207,6 +223,7 @@ API = (function() {
 		})
 	}
 
+	api.prototype.getCapabilities = getCapabilities;
 	api.prototype.getAttributes = getAttributes;
 	api.prototype.getTimestamps = getTimestamps;
 	api.prototype.getAttributeValues = getAttributeValues;
