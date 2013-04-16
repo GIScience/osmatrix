@@ -104,9 +104,9 @@ DATABASE = (function() {
 				query = [
 					"(SELECT cells.id as cell_id, geom, starttable.value AS startVal, endtable.value AS endVal, ",
 					"(coalesce(endtable.value, 0.001)/coalesce(starttable.value, 0.001)) as value, ",
-					"CAST(round(CAST(((coalesce(endtable.value, 0.001)/coalesce(starttable.value, 0.001)) * 100) AS numeric), 1) AS text) || '%' AS label FROM cells ",
-					"LEFT JOIN (SELECT cell_id, value FROM " + table + " WHERE valid <= 2 AND (expired IS NULL OR expired > 2)) as starttable ON (cells.id = starttable.cell_id)", 
-					"LEFT JOIN (SELECT cell_id, value FROM " + table + " WHERE valid <= 4 AND (expired IS NULL OR expired > 4)) as endtable ON (cells.id = endtable.cell_id) ",
+					"CAST(round(CAST(((coalesce(endtable.value, 0.001)/coalesce(starttable.value, 0.001)) * 100 - 100) AS numeric), 1) AS text) || '%' AS label FROM cells ",
+					"LEFT JOIN (SELECT cell_id, value FROM " + table + " WHERE valid <= " + timestamp.start + " AND (expired IS NULL OR expired > " + timestamp.start + ")) as starttable ON (cells.id = starttable.cell_id)", 
+					"LEFT JOIN (SELECT cell_id, value FROM " + table + " WHERE valid <= " + timestamp.end + " AND (expired IS NULL OR expired > " + timestamp.end + ")) as endtable ON (cells.id = endtable.cell_id) ",
 					"WHERE ",
 					"(ST_Intersects(geom, geomfromtext(\'POLYGON((" + bbox[0] + " " + bbox[1] + "," + bbox[0] + " " + bbox[3] + "," + bbox[2] + " " + bbox[3] + "," + bbox[2] + " " + bbox[1] + "," + bbox[0] + " " + bbox[1] + "))\', 900913))) AND ",
 					"starttable.value IS NOT NULL OR endtable.value IS NOT NULL) as awesometable"
