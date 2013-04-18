@@ -68,7 +68,7 @@ DATABASE = (function() {
 
 			if (attributeName == 'dateOfEldestEdit' || attributeName == 'DateOfLatestEdit') {
 				pending--;
-				results[attributeName] = {'table' : table, 'quantiles': [
+				results[attributeName] = {'title': row.title, 'description': row.description, 'table' : table, 'quantiles': [
 					"'2008-01-01'", "'2008-07-01'","'2009-01-01'", "'2009-07-01'","'2010-01-01'", "'2010-07-01'", "'2011-01-01'", "'2011-07-01'", "'2012-01-01'"
 				]}
 			} else {
@@ -77,7 +77,7 @@ DATABASE = (function() {
 					function(error, result) {
 						if (error) throw new Error('Error querying quantile: ' + error);
 						else {
-							results[attributeName] = {'table' : table, 'quantiles': result.rows[0].quantile};
+							results[attributeName] = {'title': row.title, 'description': row.description, 'table' : table, 'quantiles': result.rows[0].quantile};
 							pending--;
 							if (pending === 0) {
 								connection.end();

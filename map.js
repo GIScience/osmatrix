@@ -233,6 +233,7 @@ MAP = (function() {
 	 * Responds tohe getLegend request by sending the image of the tile. See http://mcavage.github.com/node-restify/#Routing for parameter description.
 	 */
 	var getLegend = function (req, res, next) {
+		res.header("Content-Type", "appplication/json");
 		var quantiles = ATTRIBUTES[req.params.layer].quantiles;
 	
 		var entries = [];
@@ -245,8 +246,8 @@ MAP = (function() {
 
 		entries.push({'color': '#' + COLORS[quantiles.length], 'label': quantiles[quantiles.length - 1] + ' &lt; [value]'});
 		entries.push({'color': '#' + ELSE_COLOR, 'label': 'Other values'});
-
-		res.send('{"attributeName": "' + req.params.layer + '", "labels": ' + JSON.stringify(entries) + '}');
+		console.log(ATTRIBUTES[req.params.layer]);
+		res.send('{"attributeName": "' + req.params.layer + '", "title": "' + ATTRIBUTES[req.params.layer].title + '", "description": "' + ATTRIBUTES[req.params.layer].description + '", "labels": ' + JSON.stringify(entries) + '}');
 		return next();
 	}
 

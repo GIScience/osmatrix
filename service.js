@@ -67,9 +67,10 @@ SERVICE = (function() {
 		server.post(SERVER_CONFIG.baseUrl + '/api/attributes/:name/geometryIntersect', api.geometryIntersection);
 		server.get(SERVER_CONFIG.baseUrl + '/api/timestamps/', api.getTimestamps);
 		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/timestamp/:timestamp/:z/:x/:y', map.getMap);
-		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/legend', map.getLegend);
+		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/legend', map.getLegend); // deprected n next version
+		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/timestamp/legend', map.getLegend);
 		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/diff/:z/:x/:y', map.getDiffMap);
-		// server.get(SERVER_CONFIG.baseUrl + '/map/diff/legend', map.getDiffMap);
+		// server.get(SERVER_CONFIG.baseUrl + '/map/:layer/diff/legend', map.getDiffMap);
 
 		server.listen(SERVER_CONFIG.port, function() {
 			console.log('Service ready: %s listening at %s', server.name, server.url);
