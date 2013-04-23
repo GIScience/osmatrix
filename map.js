@@ -232,28 +232,52 @@ MAP = (function() {
 	/**
 	 * Responds tohe getLegend request by sending the image of the tile. See http://mcavage.github.com/node-restify/#Routing for parameter description.
 	 */
-	var getLegend = function (req, res, next) {
+	var getLegend = function (quantiles, colors, req, res, next) {
 		res.header("Content-Type", "appplication/json");
-		var quantiles = ATTRIBUTES[req.params.layer].quantiles;
 	
 		var entries = [];
 		quantiles.forEach(function(quantil, i) {
 			entries.push({
-				'color': '#' + COLORS[i],
+				'color': '#' + colors[i],
 				'label': ((i === 0) ? ('[value] &lt;=' + quantil) : (quantiles[i-1] + ' &lt; [value] &lt;= ' + quantil))
 			});
 		});
 
-		entries.push({'color': '#' + COLORS[quantiles.length], 'label': quantiles[quantiles.length - 1] + ' &lt; [value]'});
+		entries.push({'color': '#' + colors[quantiles.length], 'label': quantiles[quantiles.length - 1] + ' &lt; [value]'});
 		entries.push({'color': '#' + ELSE_COLOR, 'label': 'Other values'});
-		console.log(ATTRIBUTES[req.params.layer]);
 		res.send('{"attributeName": "' + req.params.layer + '", "title": "' + ATTRIBUTES[req.params.layer].title + '", "description": "' + ATTRIBUTES[req.params.layer].description + '", "labels": ' + JSON.stringify(entries) + '}');
 		return next();
 	}
 
+	/**
+	 * [getTimeLegend description]
+	 * @param  {[type]}   req  [description]
+	 * @param  {[type]}   res  [description]
+	 * @param  {Function} next [description]
+	 */
+	var getTimeLegend = function(req, res, next) {
+		getLegend(ATTRIBUTES[req.params.layer].quantiles, COLORS, req, res, next)
+	}
+
+	/**
+	 * [getDiffLegend description]
+	 * @param  {[type]}   req  [description]
+	 * @param  {[type]}   res  [description]
+	 * @param  {Function} next [description]
+	 * @return {[type]}        [description]
+	 */
+	var getDiffLegend = function(req, res, next) {
+		var quantiles = [];
+		for (var i = 0, len = DIFF_QUANTILES.length; i < len; i++) {
+			quantiles.push((DIFF_QUANTILES[i] > 1 ? '+' : '') + ((DIFF_QUANTILES[i] * 100) - 100) + '%');
+		}
+		getLegend(quantiles, DIFF_COLORS, req, res, next);
+	}
+
 	map.prototype.getMap = getMap;
 	map.prototype.getDiffMap = getDiffMap;
-	map.prototype.getLegend = getLegend;
+	map.prototype.getTimeLegend = getTimeLegend;
+	map.prototype.getDiffLegend = getDiffLegend;
 	return map;
 }());
 
