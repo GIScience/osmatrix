@@ -67,7 +67,7 @@ SERVICE = (function() {
 		server.post(SERVER_CONFIG.baseUrl + '/api/attributes/:name/geometryIntersect', api.geometryIntersection);
 		server.get(SERVER_CONFIG.baseUrl + '/api/timestamps/', api.getTimestamps);
 		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/timestamp/:timestamp/:z/:x/:y', map.getMap);
-		// server.get(SERVER_CONFIG.baseUrl + '/map/:layer/legend', map.getLegend); // deprected n next version
+		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/legend', map.getLegend); // Deprecated with next version
 		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/timestamp/legend', map.getTimeLegend);
 		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/diff/:z/:x/:y', map.getDiffMap);
 		server.get(SERVER_CONFIG.baseUrl + '/map/:layer/diff/legend', map.getDiffLegend);

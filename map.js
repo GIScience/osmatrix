@@ -232,7 +232,10 @@ MAP = (function() {
 	/**
 	 * Responds tohe getLegend request by sending the image of the tile. See http://mcavage.github.com/node-restify/#Routing for parameter description.
 	 */
-	var getLegend = function (quantiles, colors, req, res, next) {
+	var getLegend = function (req, res, next, q, c) {
+		var quantiles = q || ATTRIBUTES[req.params.layer].quantiles;
+		var colors = c || COLORS;
+
 		res.header("Content-Type", "appplication/json");
 	
 		var entries = [];
@@ -256,7 +259,7 @@ MAP = (function() {
 	 * @param  {Function} next [description]
 	 */
 	var getTimeLegend = function(req, res, next) {
-		getLegend(ATTRIBUTES[req.params.layer].quantiles, COLORS, req, res, next)
+		getLegend(req, res, next, ATTRIBUTES[req.params.layer].quantiles, COLORS);
 	}
 
 	/**
@@ -271,13 +274,14 @@ MAP = (function() {
 		for (var i = 0, len = DIFF_QUANTILES.length; i < len; i++) {
 			quantiles.push((DIFF_QUANTILES[i] > 1 ? '+' : '') + ((DIFF_QUANTILES[i] * 100) - 100) + '%');
 		}
-		getLegend(quantiles, DIFF_COLORS, req, res, next);
+		getLegend(req, res, next, quantiles, DIFF_COLORS);
 	}
 
 	map.prototype.getMap = getMap;
 	map.prototype.getDiffMap = getDiffMap;
 	map.prototype.getTimeLegend = getTimeLegend;
 	map.prototype.getDiffLegend = getDiffLegend;
+	map.prototype.getLegend = getLegend; // Deprecated with next version
 	return map;
 }());
 

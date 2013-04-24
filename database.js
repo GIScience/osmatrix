@@ -266,10 +266,12 @@ DATABASE = (function() {
 	 * @param  {[type]}   request     [description]
 	 */
 	var getAttributeValues = function(table, queryParams, callback, request) {
-		var filter;
+		var filter, geomReq = "ST_AsGeoJSON(cells.geom)";
 		if (queryParams) filter = getFilters(table, queryParams);
 
-		var attrQueryString = "SELECT " + table + ".id, " + table + ".cell_id, CAST(round(CAST(value AS numeric), 3) AS double precision) AS value, ST_AsGeoJSON(cells.geom) AS geometry, to_char(timesV.time, 'YYYY-MM-DD') AS timeValid, to_char(timesE.time, 'YYYY-MM-DD') AS timeExpired FROM " + table + " LEFT JOIN cells ON (" + table + ".cell_id = cells.id) LEFT JOIN times AS timesV ON (" + table + ".valid = timesV.id) LEFT JOIN times  AS timesE ON (" + table + ".expired = timesE.id) " + (filter ? filter : "") + "ORDER BY cell_id, timevalid";
+		if (queryParams && queryParams.proj) geomReq = "ST_AsGeoJSON(ST_Transform(cells.geom, " + queryParams.proj + "))";
+
+		var attrQueryString = "SELECT " + table + ".id, " + table + ".cell_id, CAST(round(CAST(value AS numeric), 3) AS double precision) AS value, " + geomReq + " AS geometry, to_char(timesV.time, 'YYYY-MM-DD') AS timeValid, to_char(timesE.time, 'YYYY-MM-DD') AS timeExpired FROM " + table + " LEFT JOIN cells ON (" + table + ".cell_id = cells.id) LEFT JOIN times AS timesV ON (" + table + ".valid = timesV.id) LEFT JOIN times  AS timesE ON (" + table + ".expired = timesE.id) " + (filter ? filter : "") + "ORDER BY cell_id, timevalid";
 
 		var connection = connect();
 		connection.query(
