@@ -119,7 +119,7 @@ API = (function() {
 
 			var stats = getTimestampStats(responseResults);
 			
-			request.res.send('{"result": ' + JSON.stringify(responseResults) + ', "stats": ' + JSON.stringify(stats) + '}');
+			request.res.send('{"attribute": "' + request.req.params.name + '", "timestamps": ' + JSON.stringify(TIMESTAMPS) + ', "result": ' + JSON.stringify(responseResults) + ', "stats": ' + JSON.stringify(stats) + '}');
 		}
 
 		return request.next();

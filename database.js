@@ -127,8 +127,8 @@ DATABASE = (function() {
 		  			valueRequest,
 		  			labelRequest, 
 		  			" 	geom ",
-		  			"FROM " + table,
-					" LEFT JOIN cells ON (" + table + ".cell_id = cells.id) ",
+		  			"FROM cells",
+					" LEFT JOIN " + table + " ON (cells.id = " + table + ".cell_id) ",
 					"WHERE ",
 					"(ST_Intersects(geom, geomfromtext(\'POLYGON((" + bbox[0] + " " + bbox[1] + "," + bbox[0] + " " + bbox[3] + "," + bbox[2] + " " + bbox[3] + "," + bbox[2] + " " + bbox[1] + "," + bbox[0] + " " + bbox[1] + "))\', 900913))) AND ",
 					"(" + table + ".valid <= " + timestamp + " AND ((" + table + ".expired > " + timestamp + ") OR (" + table + ".expired IS NULL)))) as awesometable"
