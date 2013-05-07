@@ -25,7 +25,7 @@ MAP = (function() {
 	 * [NULL_COLOR description]
 	 * @type {String}
 	 */
-	var NULL_COLOR = "ffffff"; 
+	var NULL_COLOR = "ECE7F2"; 
 
 	/**
 	 * Defines the color of features not covered by the color scheme.
@@ -248,7 +248,7 @@ MAP = (function() {
 
 		entries.push({'color': '#' + colors[quantiles.length], 'label': quantiles[quantiles.length - 1] + ' &lt; [value]'});
 		entries.push({'color': '#' + ELSE_COLOR, 'label': 'Other values'});
-		res.send('{"attributeName": "' + req.params.layer + '", "title": "' + ATTRIBUTES[req.params.layer].title + '", "description": "' + ATTRIBUTES[req.params.layer].description + '", "labels": ' + JSON.stringify(entries) + '}');
+		res.send('{"attribute": ' + JSON.stringify(ATTRIBUTES[req.params.layer]) + ', "labels": ' + JSON.stringify(entries) + '}');
 		return next();
 	}
 
