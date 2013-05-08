@@ -76,16 +76,21 @@ MAP = (function() {
 	 * @return {String}            The filter definition encoded in Mapnik XML.
 	 */
 	var getFilter = function(lowerBound, upperBound) {
-		var filter = [];
+		var filter;
 
-		filter.push('<Filter>');
+		if (lowerBound || upperBound) {
+			filter = [];
 
-		if (lowerBound) filter.push('[value] &gt;= ' + lowerBound);
-		if (lowerBound && upperBound) filter.push(' and ');
-		if (upperBound) filter.push('[value] &lt; ' + upperBound);
+			filter.push('<Filter>');
 
-		filter.push('</Filter>');
-		return filter.join('');
+			if (lowerBound) filter.push('[value] &gt;= ' + lowerBound);
+			if (lowerBound && upperBound) filter.push(' and ');
+			if (upperBound) filter.push('[value] &lt; ' + upperBound);
+
+			filter.push('</Filter>');
+		}
+			
+		return (filter ? filter.join('') : filter);
 	}
 
 	/**
@@ -131,28 +136,29 @@ MAP = (function() {
 		];
 
 		quantiles.forEach(function(quantil, i) {
-			style.push('<Rule>');
+			var filter = ((i === 0) ? getFilter(undefined, quantil) : getFilter(quantiles[i-1], quantil));
 
-			if (i === 0) style.push(getFilter(undefined, quantil));
-			else style.push(getFilter(quantiles[i-1], quantil));
-
-			style.push(getSymolizer(colors[i], renderOutline, renderLabel));
-
-			if (diffMap && i === 4) {
-				style.push('</Rule>');
+			if (filter) {
 				style.push('<Rule>');
-				style.push('<Filter>[value] = ' + quantil + '</Filter>');
-				style.push(getSymolizer(NULL_COLOR, renderOutline, renderLabel));
-			}
+				style.push(filter);
+				style.push(getSymolizer(colors[i], renderOutline, renderLabel));
 
-			if (i === quantiles.length-1) {
+				if (diffMap && i === 4) {
+					style.push('</Rule>');
+					style.push('<Rule>');
+					style.push('<Filter>[value] = ' + quantil + '</Filter>');
+					style.push(getSymolizer(NULL_COLOR, renderOutline, renderLabel));
+				}
+
+				if (i === quantiles.length-1) {
+					style.push('</Rule>');
+					style.push('<Rule>');
+					style.push(getFilter(quantil, undefined));
+					style.push(getSymolizer(colors[i+1], renderOutline, renderLabel));				
+				}
+
 				style.push('</Rule>');
-				style.push('<Rule>');
-				style.push(getFilter(quantil, undefined));
-				style.push(getSymolizer(colors[i+1], renderOutline, renderLabel));				
 			}
-
-			style.push('</Rule>');
 		});
 
 		style.push('<Rule><ElseFilter/>');
@@ -162,6 +168,7 @@ MAP = (function() {
 			
 		style.push('<Style name="cells"><Rule><LineSymbolizer stroke="#ccc" stroke-width="' + strokeWidth + '"/></Rule></Style>');
 		style.push('</Map>');
+
 		return style.join('');
 
 	}
