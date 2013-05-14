@@ -7,13 +7,13 @@ MAP = (function() {
 	 * Defines the color scheme of standard maps.
 	 * @type {Array}
 	 */
-	var COLORS = ["FFFFFF", "FFF7FB", "ECE7F2", "D0D1E6", "A6BDDB", "74A9CF", "3690C0", "0570B0", "045A8D", "023858"]
+	var COLORS = ["FFFFFF", "FFFFE5", "F7FCB9", "D9F0A3", "ADDD8E", "78C679", "41AB5D", "238443", "006837", "004529"];
 
 	/**
 	 * Defines the color scheme of difference maps.
 	 * @type {Array}
 	 */
-	var DIFF_COLORS = ["A50026", "D73027", "F46D43", "FDAE61", "FEE08B", "D9EF8B", "A6D96A", "66BD63", "1A9850", "006837"]
+	var DIFF_COLORS = ["A50026", "D73027", "F46D43", "FDAE61", "FEE08B", "D9EF8B", "A6D96A", "66BD63", "1A9850", "006837"];
 
 	/**
 	 * Quantiles applied to difference maps.
