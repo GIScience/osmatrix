@@ -183,13 +183,8 @@ DATABASE = (function() {
 		var connection = connect(),
 			pending = 2,
 			timeStampSql,
-			attributeSql
+			attributeSql,
 			requestResult = {};
-
-		timeStampSql = SQL.select()
-						.from('times')
-						.field('id')
-						.field('date(time)', 'timestamp');
 
 		attributeSql = SQL.select()
 						.from('attribute_types')
@@ -197,8 +192,14 @@ DATABASE = (function() {
 						.field('attribute', 'name')
 						.field('description')
 						.field('title')
+						.field('validfrom')
 						.where('id NOT IN (19)')
 						.order('title');
+
+		timeStampSql = SQL.select()
+						.from('times')
+						.field('id')
+						.field('date(time)', 'timestamp');
 
 		connection.query(attributeSql.toString(), function(error, result) {
 			pending--;
@@ -271,7 +272,7 @@ DATABASE = (function() {
 
 		if (queryParams && queryParams.proj) geomReq = "ST_AsGeoJSON(ST_Transform(cells.geom, " + queryParams.proj + "))";
 
-		var attrQueryString = "SELECT " + table + ".id, " + table + ".cell_id, CAST(round(CAST(value AS numeric), 3) AS double precision) AS value, " + geomReq + " AS geometry, to_char(timesV.time, 'YYYY-MM-DD') AS timeValid, to_char(timesE.time, 'YYYY-MM-DD') AS timeExpired FROM " + table + " LEFT JOIN cells ON (" + table + ".cell_id = cells.id) LEFT JOIN times AS timesV ON (" + table + ".valid = timesV.id) LEFT JOIN times  AS timesE ON (" + table + ".expired = timesE.id) " + (filter ? filter : "") + "ORDER BY cell_id, timevalid";
+		var attrQueryString = "SELECT " + table + ".id, " + table + ".cell_id, CAST(round(CAST(value AS numeric), 3) AS double precision) AS value, " + geomReq + " AS geometry, to_char(timesV.time, 'YYYY-MM-DD') AS timeValid, to_char(timesE.time, 'YYYY-MM-DD') AS timeExpired FROM " + table + " LEFT JOIN cells ON (" + table + ".cell_id = cells.id) LEFT JOIN times AS timesV ON (" + table + ".valid = timesV.id) LEFT JOIN times AS timesE ON (" + table + ".expired = timesE.id) " + (filter ? filter : "") + "ORDER BY cell_id, timevalid";
 
 		var connection = connect();
 		connection.query(
