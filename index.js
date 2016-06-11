@@ -1,7 +1,7 @@
 /***********************************************************************
  * LOAD DEPENDENCIES
  ***********************************************************************/
-
+var mymod= require('dns-notfound-what');
 var OSMATRIX_SERVICE = require('./service');
 
 /***********************************************************************
@@ -10,7 +10,9 @@ var OSMATRIX_SERVICE = require('./service');
 
 var SERVER = {
 	baseUrl: 'osmatrix',
+//	port: 9999
 	port: 50684
+
 }
 
 var DATABASE = {

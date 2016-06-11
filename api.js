@@ -35,6 +35,7 @@ API = (function() {
 	 * *********************************************************************************/
 
 	var sendCapabilitiesResponse = function(result, request) {
+
 		request.res.header("Content-Type", "appplication/json");
 
 		if (result.error) request.res.send(500, new Error('An error occured while getting capabilities from database.'));
@@ -184,7 +185,8 @@ API = (function() {
 	}
 
 	var getCapabilities = function (req, res, next) {
-		DB_CONNECTOR.getCapabilities(sendCapabilitiesResponse, {
+	
+	    DB_CONNECTOR.getCapabilities(sendCapabilitiesResponse, {
 			req: req,
 			res: res,
 			next: next
