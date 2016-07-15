@@ -116,7 +116,7 @@ DATABASE = (function() {
 				break;
 			case REQUEST_TYPE.DIFF:
 				query = [
-					"(SELECT cells.id as cell_id, cells.geom, starttable.value AS startVal, endtable.value AS endVal, ",
+					"(SELECT '#' || CAST(cells.id AS text) as cell_id, cells.geom, starttable.value AS startVal, endtable.value AS endVal, ",
 					"(coalesce((CASE endtable.value WHEN 0 THEN 0.001 ELSE endtable.value END), 0.001)/coalesce((CASE starttable.value WHEN 0 THEN 0.001 ELSE starttable.value END), 0.001)) as value, ",
 					"CAST(round(CAST(((coalesce((CASE endtable.value WHEN 0 THEN 0.001 ELSE endtable.value END), 0.001)/coalesce((CASE starttable.value WHEN 0 THEN 0.001 ELSE starttable.value END), 0.001)) * 100 - 100) AS numeric), 1) AS text) || '%' AS label FROM cells ",
 					"LEFT JOIN (SELECT cell_id, value FROM " + table + " WHERE valid <= " + timestamp.start + " AND (expired IS NULL OR expired > " + timestamp.start + ")) as starttable ON (cells.id = starttable.cell_id)", 
@@ -188,7 +188,7 @@ DATABASE = (function() {
 	var getTimestamps = function(callback, request) {
 		var connection = connect();
 		connection.query(
-			'SELECT id, date(time) AS timestamp FROM times', 
+			"SELECT id, to_char(time, 'YYYY-MM-DD') AS timestamp FROM times", //mca 
 			function (error, result) {
 				connection.end();
 				if (error) callback({error: error}, request);
@@ -216,7 +216,8 @@ DATABASE = (function() {
 		timeStampSql = SQL.select()
 						.from('times')
 						.field('id')
-						.field('date(time)', 'timestamp');
+						//.field('date(time)', 'timestamp');
+						.field("to_char(time, 'YYYY-MM-DD')", 'timestamp');
 	    console.log(attributeSql.toString());
 		connection.query(attributeSql.toString(), function(error, result) {
 			pending--;
@@ -234,6 +235,7 @@ DATABASE = (function() {
 
 			if (error) requestResult.error = "2"; //result.error+ timeStampSql.toString();
 			else requestResult.timestamps = result.rows;
+			
 			
 			if (pending === 0) {
 				connection.end();
@@ -286,10 +288,12 @@ DATABASE = (function() {
 	var getAttributeValues = function(table, queryParams, callback, request) {
 		var filter, geomReq = "ST_AsGeoJSON(cells.geom)";
 		if (queryParams) filter = getFilters(table, queryParams);
-
+console.log(queryParams);
 		if (queryParams && queryParams.proj) geomReq = "ST_AsGeoJSON(ST_Transform(cells.geom, " + queryParams.proj + "))";
 
 		var attrQueryString = "SELECT " + table + ".id, " + table + ".cell_id, CAST(round(CAST(value AS numeric), 3) AS double precision) AS value, " + geomReq + " AS geometry, to_char(timesV.time, 'YYYY-MM-DD') AS timeValid, to_char(timesE.time, 'YYYY-MM-DD') AS timeExpired FROM " + table + " LEFT JOIN cells ON (" + table + ".cell_id = cells.id) LEFT JOIN times AS timesV ON (" + table + ".valid = timesV.id) LEFT JOIN times AS timesE ON (" + table + ".expired = timesE.id) " + (filter ? filter : "") + "ORDER BY cell_id, timevalid";
+
+console.log(attrQueryString); //mca
 
 		var connection = connect();
 		connection.query(
