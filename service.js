@@ -60,7 +60,8 @@ SERVICE = (function() {
 		});
 
 		server.use(RESTIFY.bodyParser({ mapParams: false }));
-
+	    server.use(RESTIFY.CORS());
+	    server.use(RESTIFY.fullResponse());
 		server.get(SERVER_CONFIG.baseUrl + '/api/', api.getCapabilities);
 		server.get(SERVER_CONFIG.baseUrl + '/api/attributes/', api.getAttributes);
 		server.get(SERVER_CONFIG.baseUrl + '/api/attributes/:name', api.getAttributeValues);

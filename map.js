@@ -1,6 +1,12 @@
 var PATH = require('path');
 var QUERYSTRING = require('querystring');
 var MAPNIK = require('mapnik');
+//var MERC_1 = require('sphericalmercator');
+
+//MAPNIK.register_default_fonts();
+//important, otherwise Mapnik does not find the fonts
+MAPNIK.register_system_fonts();
+MAPNIK.register_default_input_plugins();
 
 MAP = (function() {
 	/**
@@ -8,6 +14,7 @@ MAP = (function() {
 	 * @type {Array}
 	 */
 	var COLORS = ["FFFFFF", "FFFFE5", "F7FCB9", "D9F0A3", "ADDD8E", "78C679", "41AB5D", "238443", "006837", "004529"];
+//	var COLORS = ["FFFFFF", "000000", "F7FCB9", "D9F0A3", "ADDD8E", "78C679", "41AB5D", "238443", "006837", "004529"];
 
 	/**
 	 * Defines the color scheme of difference maps.
@@ -37,14 +44,16 @@ MAP = (function() {
 	 * The opacity of the OSMatrix layer.
 	 * @type {Number}
 	 */
-	var OPACITY = 0.5;
+	var OPACITY = 0.75;
 
 	/**
 	 * Map projection object. Used to render map.
 	 * @type {Object}
 	 */
-	var MERCATOR = require(PATH.resolve(__dirname, '../node_modules/mapnik/examples/utils/sphericalmercator.js'));
-
+//	var MERCATOR = require(PATH.resolve(__dirname, 'node_modules/sphericalmercator/sphericalmercator.js'));
+	var MERC_1 = require('sphericalmercator');
+    var MERCATOR = new MERC_1({ size: 256});
+    MERCATOR.proj4 = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over";
 	/**
 	 * Contains table names and quantile thresholds for attributes.
 	 * @type {Object}
@@ -104,7 +113,7 @@ MAP = (function() {
 		var symbolizer = ['<PolygonSymbolizer gamma=".65" fill-opacity="' + OPACITY + '" fill="#' + color +'"/>'];
 
 		if (renderOutline) symbolizer.push(renderOutline);
-		if (renderLabel) symbolizer.push(renderLabel);
+	if (renderLabel) symbolizer.push(renderLabel);
 
 		return symbolizer.join('');
 	}
@@ -117,6 +126,7 @@ MAP = (function() {
 	 * @return {String}          The style definition encoded in Mapnik XML.
 	 */
 	var getStyleXML = function(layer, zoom, diffMap) {
+//	    console.log("getStyleXMS");
 		var renderLabel, 
 			renderOutline, 
 			strokeWidth = 1,
@@ -125,7 +135,11 @@ MAP = (function() {
 
 		if (zoom > 11) strokeWidth = 2;
 		if (zoom > 12) {
-			renderLabel = '<TextSymbolizer face-name="DejaVu Sans Book" size="16" dy="-10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[cell_id]</TextSymbolizer><TextSymbolizer face-name="DejaVu Sans Book" size="16" dy="10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[label]</TextSymbolizer>';
+		    renderLabel = '<TextSymbolizer face-name="DejaVu Sans Book" size="16" dy="-10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[cell_id]</TextSymbolizer><TextSymbolizer face-name="DejaVu Sans Book" size="16" dy="10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[label]</TextSymbolizer>';
+
+		    //renderLabel = '<TextSymbolizer size="16" dy="-10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[cell_id]</TextSymbolizer><TextSymbolizer size="16" dy="10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[label]</TextSymbolizer>';
+		    //renderLabel = '<TextSymbolizer face-name="unifont Medium" size="16" dy="-10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[cell_id]</TextSymbolizer><TextSymbolizer face-name="unifont Medium" size="16" dy="10" fill="black" halo-fill= "white" halo-radius="2" character-spacing="1">[label]</TextSymbolizer>';
+
 			renderOutline = '<LineSymbolizer stroke="#000000" stroke-width="2"/>';
 		}
 
@@ -136,6 +150,7 @@ MAP = (function() {
 		];
 
 		quantiles.forEach(function(quantil, i) {
+		    console.log("quantile: "+ quantil)
 			var filter = ((i === 0) ? getFilter(undefined, quantil) : getFilter(quantiles[i-1], quantil));
 
 			if (filter) {
@@ -144,6 +159,7 @@ MAP = (function() {
 				style.push(getSymolizer(colors[i], renderOutline, renderLabel));
 
 				if (diffMap && i === 4) {
+				    console.log("if diffMap: " + " i:" + i)
 					style.push('</Rule>');
 					style.push('<Rule>');
 					style.push('<Filter>[value] = ' + quantil + '</Filter>');
@@ -177,27 +193,45 @@ MAP = (function() {
 	 * Responds tohe getTile request by sending the image of the tile. See http://mcavage.github.com/node-restify/#Routing for parameter description.
 	 */
 	var getTile = function (req, res, next, type, timestamps) {
-		var table = ATTRIBUTES[req.params.layer].table,
-			bbox = MERCATOR.xyz_to_envelope(parseInt(req.params.x), parseInt(req.params.y), parseInt(req.params.z), false),
-			map = new MAPNIK.Map(256, 256, MERCATOR.proj4);
+	    //console.log("kommt er beim getTile an?");
+		var table = ATTRIBUTES[req.params.layer].table;
+	    //console.log(table);
+	    //console.log(MERCATOR.bbox);
+	    var	bbox = MERCATOR.bbox(parseInt(req.params.x), parseInt(req.params.y), parseInt(req.params.z), false,"900913");
+	    //console.log(table,bbox);
+//	    var map = new MAPNIK.Map(256, 256, '900913');
+	    var map = new MAPNIK.Map(256, 256, MERCATOR.proj4);
 
-			map.bufferSize = 64;
-       		map.fromStringSync(getStyleXML(req.params.layer, req.params.z, (type === DB_CONNECTOR.REQUEST_TYPE.DIFF)), {strict: true});
-
+	    //var map = new MAPNIK.Map(256, 256, '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over');
+	    //console.log("map"+map);
+	    //console.log("type: "+type);
+//	    console.log("DB_CONNECTOR: " + DB_CONNECTOR.REQUEST_TYPE.DIFF);
+	    map.bufferSize = 64;
+       	    map.fromStringSync(getStyleXML(req.params.layer, req.params.z, (type === DB_CONNECTOR.REQUEST_TYPE.DIFF)), {strict: true});
+	    //console.log(req.params.z.toString());
        		if (req.params.z > 9) {
-				var cellsLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
-   		     	cellsLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig('cells', bbox, DB_CONNECTOR.REQUEST_TYPE.CELL));
-	        	cellsLayer.styles = ['cells'];
-	        	map.add_layer(cellsLayer);
+		  //  console.log("ligt es am mapnik layer ");
+		    var cellsLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
+		    //console.log("soll ins Mapnik.Datasource: " + DB_CONNECTOR.getMapnikDatasourceConfig('cells', bbox, DB_CONNECTOR.REQUEST_TYPE.CELL));
+   		    cellsLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig('cells', bbox, DB_CONNECTOR.REQUEST_TYPE.CELL));
+		    //console.log("cellsLayer: " + cellsLayer.datasource);
+	            //console.log("vor dem cells");	
+		    cellsLayer.styles = ['cells'];
+		    //console.log("nach dem cells");
+	            map.add_layer(cellsLayer);
+		    //console.log("nach dem layer");
         	}
 
-        	var attributesLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
-        	attributesLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, type, timestamps));
+            var attributesLayer = new MAPNIK.Layer('tile', MERCATOR.proj4);
+//	    console.log("attributesLayer DB_Connector: "+DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, type, timestamps));
+            attributesLayer.datasource = new MAPNIK.Datasource(DB_CONNECTOR.getMapnikDatasourceConfig(table, bbox, type, timestamps));
+//	    console.log("attributesLayer.datasource: " +attributesLayer.datasource);
         	attributesLayer.styles = [req.params.layer];
         	map.add_layer(attributesLayer);
-
+//	    console.log("attributesLayer: "+attributesLayer);
         	map.extent = bbox;
             var im = new MAPNIK.Image(map.width, map.height);
+//	    console.log("Mapnik.Image");
 			map.render(im, function(err, im) {
             	if (err) {
                		throw err;
@@ -221,7 +255,10 @@ MAP = (function() {
 	 * @return {[type]}        [description]
 	 */
 	var getDiffMap = function (req, res, next) {
-		getTile(req, res, next, DB_CONNECTOR.REQUEST_TYPE.DIFF, QUERYSTRING.parse(req.query));
+            var query = require('url').parse(req.url,true).query;
+//	    console.log("getDiffmap" , query,require('url').parse(req.url,true), req.getQuery());
+	getTile(req, res, next, DB_CONNECTOR.REQUEST_TYPE.DIFF, query);
+	    
 	}
 
 	/**

@@ -35,6 +35,7 @@ API = (function() {
 	 * *********************************************************************************/
 
 	var sendCapabilitiesResponse = function(result, request) {
+
 		request.res.header("Content-Type", "appplication/json");
 
 		if (result.error) request.res.send(500, new Error('An error occured while getting capabilities from database.'));
@@ -103,8 +104,13 @@ API = (function() {
 						"values": {}
 					};
 
+	//console.log("api.js::TIMESTAMPS", TIMESTAMPS[0].timestamp, row.timevalid);
+	//console.log("typeof ",TIMESTAMPS[0].timestamp instanceof Date);
 					for (var i = 0; i < TIMESTAMPS.length; i++) {
+						// var ts = new Date(TIMESTAMPS[i].timestamp.valueOf());
+						//console.log(ts.toISOString().slice(0,10), row.timevalid);
 						if (row.timevalid == TIMESTAMPS[i].timestamp || timeSet) {
+							//if(true){//mca
 							cell.values[TIMESTAMPS[i].timestamp] = row.value;
 							timeSet = true;
 						} else {
@@ -184,7 +190,8 @@ API = (function() {
 	}
 
 	var getCapabilities = function (req, res, next) {
-		DB_CONNECTOR.getCapabilities(sendCapabilitiesResponse, {
+	
+	    DB_CONNECTOR.getCapabilities(sendCapabilitiesResponse, {
 			req: req,
 			res: res,
 			next: next
@@ -200,7 +207,8 @@ API = (function() {
 	var getAttributeValues = function(req, res, next) {
 		var queryParams;
 		
-		if (req.query) queryParams = QUERYSTRING.parse(req.query);
+		if (req.query) queryParams = QUERYSTRING.parse(req.getQuery());
+		
 		DB_CONNECTOR.getAttributeValues(ATTRIBUTES[req.params.name].table, queryParams, sendAttributeValuesResponse, {
 			req: req,
 			res: res,
