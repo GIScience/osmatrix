@@ -1,0 +1,33 @@
+{
+  "name": "osmatrix",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "gauss": "^0.2.12",
+    "geojson2wkt": "^1.0.0",
+    "dns-notfound-what": "^1.1.0",
+    "pg": "^6.0.2",
+    "minimist": "^1.2.0",
+    "path": "^0.12.7",
+    "querystring": "^0.2.0",
+    "mapnik": "^3.5.13",
+    "restify": "^4.1.1",
+    "sphericalmercator": "^1.0.5",
+    "squel": "^5.3.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GIScience/osmatrix.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GIScience/osmatrix/issues"
+  },
+  "homepage": "https://github.com/GIScience/osmatrix#readme"
+}
