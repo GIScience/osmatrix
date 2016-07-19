@@ -43,7 +43,7 @@ function getPassword() {
 				process.stdin.setRawMode(false);
 				console.log('\n\n');
 				stdin.pause();
-				DATABASE.pass = password;
+				DATABASE.pass = encodeURIComponent(password);
 				initialize();
 				break;
 	    	case "\u0003":
@@ -102,7 +102,7 @@ for (var i = 2;i < args.length; i++) {
 // Setting database settings
 DATABASE.host = argsObj.h;
 DATABASE.name = argsObj.d;
-DATABASE.user = argsObj.U;
+DATABASE.user = encodeURIComponent(argsObj.U);
 
 // getting database password
 getPassword();
