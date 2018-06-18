@@ -14,11 +14,14 @@
     "mapnik": "^3.5.13",
     "restify": "^4.1.1",
     "sphericalmercator": "^1.0.5",
-    "squel": "^5.3.3"
+    "squel": "^5.3.3",
+    "snyk": "^1.83.0"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -29,5 +32,6 @@
   "bugs": {
     "url": "https://github.com/GIScience/osmatrix/issues"
   },
-  "homepage": "https://github.com/GIScience/osmatrix#readme"
+  "homepage": "https://github.com/GIScience/osmatrix#readme",
+  "snyk": true
 }
